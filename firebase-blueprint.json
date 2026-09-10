@@ -1,0 +1,138 @@
+{
+  "entities": {
+    "Question": {
+      "title": "Community Question",
+      "description": "An Islamic discussion question or topic where community members debate with references.",
+      "type": "object",
+      "properties": {
+        "title": {
+          "type": "string",
+          "description": "Title or main question asked."
+        },
+        "details": {
+          "type": "string",
+          "description": "Detailed explanation or context of the question."
+        },
+        "category": {
+          "type": "string",
+          "description": "Category such as Fiqh, Hadith, Quran, Contemporary, Aqeedah."
+        },
+        "tags": {
+          "type": "string",
+          "description": "Comma separated tags or keywords."
+        },
+        "authorId": {
+          "type": "string",
+          "description": "UID of the user who posted the question."
+        },
+        "authorName": {
+          "type": "string",
+          "description": "Display name of the author."
+        },
+        "authorPhoto": {
+          "type": "string",
+          "description": "Photo URL of the author if available."
+        },
+        "upvotes": {
+          "type": "number",
+          "description": "Number of upvotes."
+        },
+        "commentsCount": {
+          "type": "number",
+          "description": "Count of comments/references given."
+        },
+        "createdAt": {
+          "type": "string",
+          "description": "ISO timestamp of question creation."
+        }
+      },
+      "required": ["title", "details", "authorId", "authorName", "createdAt"]
+    },
+    "Comment": {
+      "title": "Question Comment & Reference",
+      "description": "A debate comment, perspective, or Quran/Hadith reference posted on a question. Requires user sign-up.",
+      "type": "object",
+      "properties": {
+        "questionId": {
+          "type": "string",
+          "description": "The ID of the parent question."
+        },
+        "text": {
+          "type": "string",
+          "description": "The argument, explanation, or response."
+        },
+        "references": {
+          "type": "string",
+          "description": "Specific Quranic ayahs, Hadith citations, or classical scholarly references."
+        },
+        "stance": {
+          "type": "string",
+          "description": "Type of reply: 'scholarly_reference', 'perspective', 'clarification', or 'general'."
+        },
+        "authorId": {
+          "type": "string",
+          "description": "UID of the authenticated author."
+        },
+        "authorName": {
+          "type": "string",
+          "description": "Display name of the user."
+        },
+        "authorPhoto": {
+          "type": "string",
+          "description": "Photo URL of the author."
+        },
+        "upvotes": {
+          "type": "number",
+          "description": "Number of helpful votes."
+        },
+        "createdAt": {
+          "type": "string",
+          "description": "ISO timestamp of creation."
+        }
+      },
+      "required": ["questionId", "text", "authorId", "authorName", "createdAt"]
+    },
+    "UserMonthlySalah": {
+      "title": "User Monthly Salah Tracker",
+      "description": "Tracks the 5 daily prayers (Fajr, Dhuhr, Asr, Maghrib, Isha) for a given month for an authenticated user.",
+      "type": "object",
+      "properties": {
+        "userId": {
+          "type": "string",
+          "description": "UID of the user."
+        },
+        "monthKey": {
+          "type": "string",
+          "description": "Year and month key, e.g. '2026-09'."
+        },
+        "totalCompleted": {
+          "type": "number",
+          "description": "Total prayers prayed in the month."
+        },
+        "records": {
+          "type": "string",
+          "description": "Serialized JSON of day-to-day prayer statuses."
+        },
+        "updatedAt": {
+          "type": "string",
+          "description": "ISO timestamp when last updated."
+        }
+      },
+      "required": ["userId", "monthKey", "updatedAt"]
+    }
+  },
+  "firestore": {
+    "/questions/{questionId}": {
+      "schema": "Question",
+      "description": "Collection of community discussion questions and debate topics."
+    },
+    "/questions/{questionId}/comments/{commentId}": {
+      "schema": "Comment",
+      "description": "Subcollection of comments and textual references for a specific question."
+    },
+    "/users/{userId}/salahMonthly/{monthKey}": {
+      "schema": "UserMonthlySalah",
+      "description": "Monthly salah tracking records for a specific user."
+    }
+  }
+}
