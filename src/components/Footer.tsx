@@ -20,7 +20,7 @@ export const Footer: React.FC<FooterProps> = ({ onNavigate }) => {
               <span className="text-xl font-bold text-white tracking-tight">Centre of Islam</span>
             </div>
             <p className="text-sm text-stone-400 max-w-sm leading-relaxed">
-              An authentic, comprehensive digital sanctuary empowering Muslims worldwide with verifiable Quranic knowledge, Prophetic Hadith, accurate prayer timings, Islamic education for major boards, and reflective spiritual tools.
+              An authentic, comprehensive digital sanctuary empowering Muslims worldwide with verifiable Quranic knowledge, Prophetic Hadith, educational syllabi across major boards, and reflective spiritual tools.
             </p>
             <div className="pt-2 text-xs text-amber-300/80 font-serif italic">
               "My Lord, increase me in knowledge." — Surah Ta-Ha (20:114)
@@ -34,8 +34,8 @@ export const Footer: React.FC<FooterProps> = ({ onNavigate }) => {
             </h4>
             <ul className="space-y-2 text-sm">
               <li>
-                <button onClick={() => onNavigate('prayer-times')} className="hover:text-white transition-colors">
-                  Prayer Times & Qibla
+                <button onClick={() => onNavigate('quran')} className="hover:text-white transition-colors">
+                  Online Noble Quran
                 </button>
               </li>
               <li>
@@ -83,8 +83,13 @@ export const Footer: React.FC<FooterProps> = ({ onNavigate }) => {
                 </button>
               </li>
               <li>
+                <button onClick={() => onNavigate('convert-guide')} className="hover:text-amber-300 text-amber-200/90 font-medium transition-colors">
+                  Convert Guide (New Muslims)
+                </button>
+              </li>
+              <li>
                 <button onClick={() => onNavigate('study-notes')} className="hover:text-white transition-colors">
-                  Board Notes (IGCSE • CBSE)
+                  Notes
                 </button>
               </li>
               <li>
@@ -114,6 +119,11 @@ export const Footer: React.FC<FooterProps> = ({ onNavigate }) => {
               <li>
                 <button onClick={() => onNavigate('terms')} className="hover:text-white transition-colors">
                   Terms & Conditions
+                </button>
+              </li>
+              <li>
+                <button onClick={() => onNavigate('admin')} className="text-amber-400 hover:text-amber-300 transition-colors flex items-center gap-1 font-semibold">
+                  Admin Portal
                 </button>
               </li>
             </ul>

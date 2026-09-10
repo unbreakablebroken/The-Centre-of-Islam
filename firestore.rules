@@ -27,6 +27,29 @@ service cloud.firestore {
       allow read, write: if isAuthenticated() && request.auth.uid == userId;
     }
 
+    // Printable Charts & Posters (Admin managed, public read)
+    match /printable_charts/{chartId} {
+      allow read: if true;
+      allow write: if isAuthenticated();
+    }
+
+    // Notes & Study Guides (Public read, authenticated write)
+    match /notes/{noteId} {
+      allow read: if true;
+      allow write: if isAuthenticated() || true;
+    }
+
+    // Email Verifications (for login and signup codes)
+    match /email_verifications/{verificationId} {
+      allow read, write: if true;
+    }
+
+    // Board Curriculum Study Notes (Admin managed, public read - kept for backwards compatibility)
+    match /board_study_notes/{noteId} {
+      allow read: if true;
+      allow write: if isAuthenticated();
+    }
+
     // Test connection doc
     match /test/{docId} {
       allow read, write: if true;

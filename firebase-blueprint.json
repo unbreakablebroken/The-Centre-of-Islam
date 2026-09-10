@@ -119,6 +119,72 @@
         }
       },
       "required": ["userId", "monthKey", "updatedAt"]
+    },
+    "AdminPrintableChart": {
+      "title": "Printable Chart or Poster",
+      "description": "Uploaded Islamic educational poster or chart managed by administrators.",
+      "type": "object",
+      "properties": {
+        "title": { "type": "string", "description": "Title of the chart/poster" },
+        "subtitle": { "type": "string", "description": "Subtitle or brief purpose" },
+        "category": { "type": "string", "description": "Category e.g. Salah & Worship, Duas, etc." },
+        "description": { "type": "string", "description": "Summary description" },
+        "sections": { "type": "string", "description": "JSON serialized sections array" },
+        "footerNote": { "type": "string", "description": "Footer citation or guidance note" },
+        "authorEmail": { "type": "string", "description": "Email of the admin who uploaded it" },
+        "createdAt": { "type": "string", "description": "ISO timestamp" }
+      },
+      "required": ["title", "category", "description", "createdAt"]
+    },
+    "AdminBoardNote": {
+      "title": "Board Curriculum Study Note",
+      "description": "Academic study note uploaded by admins for IGCSE, CBSE, NCERT, or SSC boards.",
+      "type": "object",
+      "properties": {
+        "board": { "type": "string", "description": "Board code: IGCSE, CBSE, NCERT, or SSC" },
+        "subjectTitle": { "type": "string", "description": "Title of the subject / paper" },
+        "gradeLevel": { "type": "string", "description": "Grade or academic level" },
+        "topicTitle": { "type": "string", "description": "Topic or chapter title" },
+        "summary": { "type": "string", "description": "Comprehensive summary" },
+        "keyPoints": { "type": "string", "description": "JSON serialized key points array" },
+        "importantTerms": { "type": "string", "description": "JSON serialized glossary array" },
+        "sampleQuestions": { "type": "string", "description": "JSON serialized exam questions array" },
+        "authorEmail": { "type": "string", "description": "Email of the admin author" },
+        "createdAt": { "type": "string", "description": "ISO timestamp" }
+      },
+      "required": ["board", "topicTitle", "summary", "createdAt"]
+    },
+    "GeneralNote": {
+      "title": "Notes & Study Material",
+      "description": "Comprehensive typed notes, articles, and computer-uploaded files.",
+      "type": "object",
+      "properties": {
+        "title": { "type": "string", "description": "Title of the note" },
+        "category": { "type": "string", "description": "Subject or category (e.g. Quran & Tafsir, Fiqh, Islamic History, General)" },
+        "description": { "type": "string", "description": "Brief summary / overview" },
+        "content": { "type": "string", "description": "Full typed notes, lesson content, or text" },
+        "keyPoints": { "type": "string", "description": "JSON serialized key points" },
+        "importantTerms": { "type": "string", "description": "JSON serialized terms and definitions" },
+        "sampleQuestions": { "type": "string", "description": "JSON serialized questions and answers" },
+        "attachments": { "type": "string", "description": "JSON serialized list of files uploaded from computer" },
+        "authorEmail": { "type": "string", "description": "Email of the author" },
+        "createdAt": { "type": "string", "description": "ISO timestamp" }
+      },
+      "required": ["title", "category", "description", "createdAt"]
+    },
+    "EmailVerification": {
+      "title": "Email Verification Code",
+      "description": "Stores 6-digit verification codes sent to users for login and signup.",
+      "type": "object",
+      "properties": {
+        "email": { "type": "string", "description": "User email address" },
+        "code": { "type": "string", "description": "6-digit OTP verification code" },
+        "displayName": { "type": "string", "description": "Optional name provided during signup" },
+        "expiresAt": { "type": "number", "description": "Expiration epoch timestamp in ms" },
+        "used": { "type": "boolean", "description": "Whether the code has been used" },
+        "createdAt": { "type": "string", "description": "ISO timestamp" }
+      },
+      "required": ["email", "code", "expiresAt", "used", "createdAt"]
     }
   },
   "firestore": {
@@ -133,6 +199,22 @@
     "/users/{userId}/salahMonthly/{monthKey}": {
       "schema": "UserMonthlySalah",
       "description": "Monthly salah tracking records for a specific user."
+    },
+    "/printable_charts/{chartId}": {
+      "schema": "AdminPrintableChart",
+      "description": "Printable charts and wall posters uploaded by administrators."
+    },
+    "/notes/{noteId}": {
+      "schema": "GeneralNote",
+      "description": "Notes and study material uploaded or typed by administrators."
+    },
+    "/email_verifications/{verificationId}": {
+      "schema": "EmailVerification",
+      "description": "Verification codes sent to user emails for login/signup."
+    },
+    "/board_study_notes/{noteId}": {
+      "schema": "AdminBoardNote",
+      "description": "Board study notes uploaded by administrators."
     }
   }
 }

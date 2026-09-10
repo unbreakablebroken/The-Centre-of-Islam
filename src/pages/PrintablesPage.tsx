@@ -1,5 +1,8 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { PRINTABLE_CHARTS, PrintableChartItem } from '../data/printableChartsData';
+import { useAuth } from '../context/AuthContext';
+import { db } from '../lib/firebase';
+import { collection, getDocs } from 'firebase/firestore';
 import { 
   Printer, 
   Download, 
@@ -8,16 +11,68 @@ import {
   Sparkles, 
   FileText, 
   Maximize2, 
-  X 
+  X,
+  ShieldCheck,
+  Plus
 } from 'lucide-react';
 
-export const PrintablesPage: React.FC = () => {
+interface PrintablesPageProps {
+  onNavigate?: (page: string) => void;
+}
+
+export const PrintablesPage: React.FC<PrintablesPageProps> = ({ onNavigate }) => {
+  const { isAdmin } = useAuth();
+  const [allCharts, setAllCharts] = useState<PrintableChartItem[]>(PRINTABLE_CHARTS);
   const [selectedChart, setSelectedChart] = useState<PrintableChartItem>(PRINTABLE_CHARTS[0]);
-  const [previewModalOpen, setPreviewModalOpen] = useState(false);
+
+  // Fetch admin uploaded charts from Firestore
+  useEffect(() => {
+    const fetchAdminCharts = async () => {
+      try {
+        const snap = await getDocs(collection(db, 'printable_charts'));
+        const customCharts: PrintableChartItem[] = [];
+        snap.forEach((d) => {
+          const data = d.data();
+          let parsedSections = [];
+          let parsedAttachments = [];
+          try {
+            parsedSections = typeof data.sections === 'string' ? JSON.parse(data.sections) : data.sections;
+          } catch {
+            parsedSections = [];
+          }
+          try {
+            parsedAttachments = typeof data.attachments === 'string' ? JSON.parse(data.attachments) : data.attachments;
+          } catch {
+            parsedAttachments = [];
+          }
+
+          customCharts.push({
+            id: d.id,
+            title: data.title || '',
+            subtitle: data.subtitle || '',
+            category: data.category || 'Salah & Worship',
+            description: data.description || '',
+            imageUrl: data.imageUrl || (parsedAttachments[0]?.dataUrl),
+            attachments: parsedAttachments,
+            orientation: (data.orientation as any) || 'portrait',
+            sections: parsedSections,
+            footerNote: data.footerNote || ''
+          });
+        });
+
+        if (customCharts.length > 0) {
+          setAllCharts([...PRINTABLE_CHARTS, ...customCharts]);
+        }
+      } catch (err) {
+        console.warn('Could not load extra admin charts:', err);
+      }
+    };
+
+    fetchAdminCharts();
+  }, []);
 
   const handlePrint = (chart: PrintableChartItem) => {
     setSelectedChart(chart);
-    // Allow brief render then trigger print
     setTimeout(() => {
       window.print();
     }, 150);
@@ -41,9 +96,19 @@ export const PrintablesPage: React.FC = () => {
         </div>
 
         <div className="flex items-center gap-2">
+          {isAdmin && onNavigate && (
+            <button
+              onClick={() => onNavigate('admin')}
+              className="px-3.5 py-2 bg-amber-100 hover:bg-amber-200 text-amber-900 border border-amber-300 rounded-xl text-xs font-bold flex items-center gap-1.5 transition-colors"
+            >
+              <ShieldCheck className="w-4 h-4 text-emerald-800" />
+              <span>Upload New Poster (Admin)</span>
+            </button>
+          )}
+
           <button
             onClick={() => handlePrint(selectedChart)}
-            className="px-4 py-2 bg-emerald-800 hover:bg-emerald-900 text-white rounded-xl text-xs font-bold flex items-center gap-2 transition-colors shadow-xs"
+            className="px-4 py-2 bg-emerald-800 hover:bg-emerald-900 text-white rounded-xl text-xs font-bold flex items-center gap-2 transition-colors shadow-xs cursor-pointer"
           >
             <Printer className="w-4 h-4" />
             <span>Print Current Chart</span>
@@ -53,7 +118,7 @@ export const PrintablesPage: React.FC = () => {
 
       {/* Chart Selector Cards (no-print) */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 no-print">
-        {PRINTABLE_CHARTS.map((chart) => {
+        {allCharts.map((chart) => {
           const isSelected = selectedChart.id === chart.id;
           return (
             <div
@@ -74,7 +139,7 @@ export const PrintablesPage: React.FC = () => {
                 <h3 className="font-bold text-sm sm:text-base mt-2 leading-snug">
                   {chart.title}
                 </h3>
-                <p className={`text-xs mt-2 leading-relaxed ${isSelected ? 'text-emerald-100' : 'text-stone-500'}`}>
+                <p className={`text-xs mt-2 leading-relaxed line-clamp-3 ${isSelected ? 'text-emerald-100' : 'text-stone-500'}`}>
                   {chart.description}
                 </p>
               </div>
@@ -118,6 +183,29 @@ export const PrintablesPage: React.FC = () => {
           </p>
         </div>
 
+        {/* If the poster has an uploaded graphic image from computer */}
+        {selectedChart.imageUrl && (
+          <div className="space-y-4">
+            <div className="rounded-2xl overflow-hidden border border-stone-300 shadow-sm bg-stone-50">
+              <img
+                src={selectedChart.imageUrl}
+                alt={selectedChart.title}
+                className="w-full h-auto object-contain max-h-[800px] mx-auto"
+              />
+            </div>
+            <div className="text-center no-print">
+              <a
+                href={selectedChart.imageUrl}
+                download={`${selectedChart.title.toLowerCase().replace(/\s+/g, '-')}-poster.png`}
+                className="inline-flex items-center gap-2 px-4 py-2 bg-emerald-800 hover:bg-emerald-900 text-white text-xs font-bold rounded-xl shadow-xs transition-colors"
+              >
+                <Printer className="w-4 h-4" />
+                <span>Download High-Res Poster File</span>
+              </a>
+            </div>
+          </div>
+        )}
+
         {/* Poster Sections */}
         <div className="space-y-6">
           {selectedChart.sections.map((section, idx) => (
@@ -138,29 +226,21 @@ export const PrintablesPage: React.FC = () => {
                     className="p-4 rounded-xl border border-stone-200 bg-stone-50/50 space-y-1.5"
                   >
                     <div className="flex items-center justify-between">
-                      <div className="font-bold text-sm text-stone-900 flex items-center gap-1.5">
-                        {item.step && (
-                          <span className="w-5 h-5 rounded-full bg-emerald-800 text-white text-xs flex items-center justify-center font-mono shrink-0">
-                            {item.step}
-                          </span>
-                        )}
-                        <span>{item.label}</span>
-                      </div>
+                      <span className="font-bold text-xs uppercase tracking-wide text-emerald-800">
+                        {item.label}
+                      </span>
+                      {item.arabic && (
+                        <span className="font-arabic text-lg font-bold text-stone-900">
+                          {item.arabic}
+                        </span>
+                      )}
                     </div>
-
-                    {item.arabic && (
-                      <p dir="rtl" className="font-arabic text-lg text-emerald-950 text-right my-1">
-                        {item.arabic}
-                      </p>
-                    )}
-
                     {item.transliteration && (
-                      <p className="text-[11px] text-stone-500 italic font-mono">
+                      <p className="text-xs font-serif italic text-stone-700">
                         {item.transliteration}
                       </p>
                     )}
-
-                    <p className="text-xs text-stone-700 leading-relaxed">
+                    <p className="text-xs text-stone-600 leading-relaxed font-medium">
                       {item.detail}
                     </p>
                   </div>
@@ -170,51 +250,10 @@ export const PrintablesPage: React.FC = () => {
           ))}
         </div>
 
-        {/* Monthly Salah Blank Printable Table (Special view for Salah Breakdown or Tracker) */}
-        {selectedChart.id === 'salah-breakdown' && (
-          <div className="mt-6 pt-4 border-t border-stone-200">
-            <h4 className="font-bold text-xs uppercase tracking-wider text-stone-700 mb-2">
-              Weekly Prayer Consistency Scorecard (Cut & Check)
-            </h4>
-            <div className="overflow-x-auto">
-              <table className="w-full text-xs text-center border-collapse border border-stone-300">
-                <thead>
-                  <tr className="bg-stone-100 font-bold">
-                    <th className="border border-stone-300 p-2 text-left">Day</th>
-                    <th className="border border-stone-300 p-2">Fajr (2)</th>
-                    <th className="border border-stone-300 p-2">Dhuhr (4)</th>
-                    <th className="border border-stone-300 p-2">Asr (4)</th>
-                    <th className="border border-stone-300 p-2">Maghrib (3)</th>
-                    <th className="border border-stone-300 p-2">Isha (4)</th>
-                    <th className="border border-stone-300 p-2">Completed</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {['Saturday', 'Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday'].map((day) => (
-                    <tr key={day}>
-                      <td className="border border-stone-300 p-2 text-left font-semibold">{day}</td>
-                      <td className="border border-stone-300 p-2">▢</td>
-                      <td className="border border-stone-300 p-2">▢</td>
-                      <td className="border border-stone-300 p-2">▢</td>
-                      <td className="border border-stone-300 p-2">▢</td>
-                      <td className="border border-stone-300 p-2">▢</td>
-                      <td className="border border-stone-300 p-2 font-mono">/5</td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          </div>
-        )}
-
-        {/* Poster Footer Note */}
-        <div className="pt-6 border-t-2 border-stone-900 text-center space-y-1">
-          <p className="text-xs font-semibold text-stone-800">
-            {selectedChart.footerNote}
-          </p>
-          <p className="text-[10px] text-stone-500 tracking-wider uppercase">
-            Printed from Centre of Islam • Dedicated for personal & madrasah education
-          </p>
+        {/* Poster Footer Citation */}
+        <div className="pt-6 border-t-2 border-stone-900 flex flex-col sm:flex-row items-center justify-between text-xs text-stone-600 gap-2">
+          <span>{selectedChart.footerNote || 'Free to download, print, and distribute for non-commercial educational purposes.'}</span>
+          <span className="font-bold uppercase tracking-wider text-emerald-900">centreofislam.org</span>
         </div>
       </div>
     </div>

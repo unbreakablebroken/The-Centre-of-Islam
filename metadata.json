@@ -1,6 +1,6 @@
 {
   "name": "Centre of Islam",
-  "description": "Comprehensive Islamic platform featuring prayer times, Quran reader, Islamic calendar, Hadith collections, daily quotes, printable charts, community Q&A with references, educational board study notes, monthly Salah counter, and digital Tasbih.",
-  "requestFramePermissions": ["geolocation"],
+  "description": "Comprehensive Islamic platform featuring online Quran, Islamic calendar, Hadith collections, daily quotes, printable charts & posters, humble Convert Guide for new Muslims, community Q&A with references, educational notes and study materials, monthly Salah habit counter, and digital Tasbih.",
+  "requestFramePermissions": [],
   "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
 }

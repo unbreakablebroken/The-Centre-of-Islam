@@ -1,6 +1,5 @@
 export type PageId = 
   | 'home'
-  | 'prayer-times'
   | 'quran'
   | 'calendar'
   | 'hadith'
@@ -8,8 +7,10 @@ export type PageId =
   | 'printables'
   | 'community-qa'
   | 'study-notes'
+  | 'convert-guide'
   | 'salah-counter'
   | 'tasbih'
+  | 'admin'
   | 'about'
   | 'privacy'
   | 'terms';
@@ -18,7 +19,7 @@ export interface UserProfile {
   uid: string;
   displayName: string | null;
   email: string | null;
-  photoURL: string | null;
+  photoURL?: string | null;
   isAnonymous?: boolean;
 }
 
@@ -94,20 +95,22 @@ export interface PrintableChart {
   previewPoints: string[];
 }
 
+export interface BoardTopic {
+  id: string;
+  title: string;
+  summary: string;
+  keyPoints: string[];
+  importantTerms: { term: string; definition: string }[];
+  sampleQuestions: { question: string; marks: number; modelAnswer: string }[];
+}
+
 export interface BoardSubjectNote {
   id: string;
   board: 'IGCSE' | 'CBSE' | 'NCERT' | 'SSC';
   boardFullName: string;
   subjectTitle: string;
   gradeLevel: string;
-  topics: {
-    id: string;
-    title: string;
-    summary: string;
-    keyPoints: string[];
-    importantTerms: { term: string; definition: string }[];
-    sampleQuestions: { question: string; marks: number; modelAnswer: string }[];
-  }[];
+  topics: BoardTopic[];
 }
 
 export interface DailySalahCheck {
@@ -120,4 +123,63 @@ export interface DailySalahCheck {
 
 export interface MonthlySalahData {
   [dayNumber: number]: DailySalahCheck;
+}
+
+export interface NoteAttachment {
+  name: string;
+  type: string;
+  size: string;
+  dataUrl: string; // Base64 data url for viewing or downloading
+}
+
+export interface GeneralNoteItem {
+  id: string;
+  title: string;
+  category: string;
+  description: string;
+  content?: string;
+  keyPoints?: string[];
+  importantTerms?: { term: string; definition: string }[];
+  sampleQuestions?: { question: string; marks?: number; modelAnswer: string }[];
+  attachments?: NoteAttachment[];
+  authorEmail?: string;
+  createdAt: string;
+}
+
+export interface AdminPrintableChart {
+  id: string;
+  title: string;
+  subtitle?: string;
+  category: string;
+  description: string;
+  imageUrl?: string;
+  attachments?: NoteAttachment[];
+  sections?: {
+    heading: string;
+    items: {
+      label?: string;
+      arabic?: string;
+      transliteration?: string;
+      detail?: string;
+      stepNumber?: number;
+    }[];
+  }[];
+  footerNote?: string;
+  authorEmail?: string;
+  createdAt: string;
+}
+
+export interface AdminBoardNote {
+  id: string;
+  board: 'IGCSE' | 'CBSE' | 'NCERT' | 'SSC';
+  subjectTitle: string;
+  gradeLevel: string;
+  topicTitle: string;
+  summary: string;
+  keyPoints: string[];
+  importantTerms: { term: string; definition: string }[];
+  sampleQuestions: { question: string; marks: number; modelAnswer: string }[];
+  attachments?: NoteAttachment[];
+  authorEmail?: string;
+  createdAt: string;
 }

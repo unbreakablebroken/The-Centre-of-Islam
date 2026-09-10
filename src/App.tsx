@@ -7,7 +7,6 @@ import { AuthModal } from './components/AuthModal';
 
 // Pages
 import { HomePage } from './pages/HomePage';
-import { PrayerTimesPage } from './pages/PrayerTimesPage';
 import { QuranPage } from './pages/QuranPage';
 import { CalendarPage } from './pages/CalendarPage';
 import { HadithPage } from './pages/HadithPage';
@@ -15,11 +14,13 @@ import { DailyQuotesPage } from './pages/DailyQuotesPage';
 import { PrintablesPage } from './pages/PrintablesPage';
 import { CommunityQAPage } from './pages/CommunityQAPage';
 import { StudyNotesPage } from './pages/StudyNotesPage';
+import { ConvertGuidePage } from './pages/ConvertGuidePage';
 import { MonthlySalahCounterPage } from './pages/MonthlySalahCounterPage';
 import { TasbihCounterPage } from './pages/TasbihCounterPage';
 import { AboutUsPage } from './pages/AboutUsPage';
 import { PrivacyPolicyPage } from './pages/PrivacyPolicyPage';
 import { TermsConditionsPage } from './pages/TermsConditionsPage';
+import { AdminPage } from './pages/AdminPage';
 
 function AppContent() {
   const [activePage, setActivePage] = useState<PageId>('home');
@@ -35,9 +36,9 @@ function AppContent() {
     const handleHashChange = () => {
       const hash = window.location.hash.replace('#', '') as PageId;
       const validPages: PageId[] = [
-        'home', 'prayer-times', 'quran', 'calendar', 'hadith',
+        'home', 'quran', 'calendar', 'hadith',
         'daily-quotes', 'printables', 'community-qa', 'study-notes',
-        'salah-counter', 'tasbih', 'about', 'privacy', 'terms'
+        'convert-guide', 'salah-counter', 'tasbih', 'about', 'privacy', 'terms', 'admin'
       ];
       if (validPages.includes(hash)) {
         setActivePage(hash);
@@ -58,8 +59,6 @@ function AppContent() {
     switch (activePage) {
       case 'home':
         return <HomePage onNavigate={handleNavigate} />;
-      case 'prayer-times':
-        return <PrayerTimesPage />;
       case 'quran':
         return <QuranPage />;
       case 'calendar':
@@ -69,11 +68,13 @@ function AppContent() {
       case 'daily-quotes':
         return <DailyQuotesPage />;
       case 'printables':
-        return <PrintablesPage />;
+        return <PrintablesPage onNavigate={handleNavigate} />;
       case 'community-qa':
         return <CommunityQAPage />;
       case 'study-notes':
-        return <StudyNotesPage />;
+        return <StudyNotesPage onNavigate={handleNavigate} />;
+      case 'convert-guide':
+        return <ConvertGuidePage onNavigate={handleNavigate} />;
       case 'salah-counter':
         return <MonthlySalahCounterPage />;
       case 'tasbih':
@@ -84,6 +85,8 @@ function AppContent() {
         return <PrivacyPolicyPage />;
       case 'terms':
         return <TermsConditionsPage />;
+      case 'admin':
+        return <AdminPage onNavigate={handleNavigate} />;
       default:
         return <HomePage onNavigate={handleNavigate} />;
     }

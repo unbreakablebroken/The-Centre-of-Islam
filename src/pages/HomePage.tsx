@@ -15,7 +15,9 @@ import {
   Sparkles, 
   CheckCircle2, 
   Users, 
-  BookMarked
+  BookMarked,
+  FileText,
+  HeartHandshake
 } from 'lucide-react';
 import { DAILY_QUOTES } from '../data/quotesData';
 import { HADITH_COLLECTION } from '../data/hadithData';
@@ -29,13 +31,6 @@ export const HomePage: React.FC<HomePageProps> = ({ onNavigate }) => {
   const featuredHadith = HADITH_COLLECTION[0];
 
   const features = [
-    {
-      id: 'prayer-times' as PageId,
-      title: 'Prayer Times & Qibla',
-      desc: 'Accurate prayer calculations for any city worldwide with countdown and Qibla compass bearing.',
-      icon: <Clock className="w-5 h-5 text-emerald-700" />,
-      tag: '5 Daily Prayers'
-    },
     {
       id: 'quran' as PageId,
       title: 'Online Quran',
@@ -80,10 +75,17 @@ export const HomePage: React.FC<HomePageProps> = ({ onNavigate }) => {
     },
     {
       id: 'study-notes' as PageId,
-      title: 'Board Study Notes',
-      desc: 'Comprehensive notes for IGCSE, CBSE, NCERT, and SSC boards with model questions and marking keys.',
-      icon: <GraduationCap className="w-5 h-5 text-emerald-700" />,
-      tag: 'IGCSE • CBSE • NCERT • SSC'
+      title: 'Notes',
+      desc: 'Comprehensive Islamic study notes, summaries, downloadable reference documents, and study guides.',
+      icon: <FileText className="w-5 h-5 text-emerald-700" />,
+      tag: 'Study & Reference'
+    },
+    {
+      id: 'convert-guide' as PageId,
+      title: 'Convert Guide',
+      desc: 'A humble, gentle, step-by-step welcoming guide with Wudu, prayer basics, and practical answers for new Muslims.',
+      icon: <HeartHandshake className="w-5 h-5 text-emerald-700" />,
+      tag: 'New Muslims'
     },
     {
       id: 'salah-counter' as PageId,
@@ -104,7 +106,7 @@ export const HomePage: React.FC<HomePageProps> = ({ onNavigate }) => {
   return (
     <div className="space-y-12 pb-16">
       {/* Hero Section */}
-      <section className="relative overflow-hidden bg-gradient-to-b from-emerald-900 via-emerald-950 to-stone-900 text-white rounded-3xl p-8 sm:p-12 border border-emerald-800 shadow-xl">
+      <section className="relative overflow-hidden bg-gradient-to-b from-emerald-900 via-emerald-950 to-stone-900 text-white rounded-3xl p-6 sm:p-10 md:p-12 border border-emerald-800 shadow-xl">
         <div className="absolute top-0 right-0 w-96 h-96 bg-emerald-700/20 rounded-full blur-3xl pointer-events-none -mr-20 -mt-20"></div>
         <div className="absolute bottom-0 left-0 w-80 h-80 bg-amber-500/10 rounded-full blur-2xl pointer-events-none -ml-16 -mb-16"></div>
 
@@ -115,11 +117,11 @@ export const HomePage: React.FC<HomePageProps> = ({ onNavigate }) => {
           </div>
 
           <div className="space-y-3">
-            <h1 className="text-3xl sm:text-5xl font-extrabold tracking-tight leading-tight text-white">
+            <h1 className="text-2xl sm:text-4xl md:text-5xl font-extrabold tracking-tight leading-snug sm:leading-tight text-white">
               Authentic Knowledge, Worship & Scholarly Discourse
             </h1>
-            <p className="text-emerald-100/90 text-base sm:text-lg leading-relaxed">
-              Your digital Islamic sanctuary: Explore the Holy Quran, live prayer times, verified Hadith, educational notes across 4 major curricula, monthly Salah tracking, and collaborative community debates backed by genuine references.
+            <p className="text-emerald-100/90 text-sm sm:text-base md:text-lg leading-relaxed">
+              Your digital Islamic sanctuary: Explore the Holy Quran, authentic Hadith collections, comprehensive study notes and documents, monthly Salah tracking, and collaborative community debates backed by genuine citations.
             </p>
           </div>
 
@@ -128,23 +130,31 @@ export const HomePage: React.FC<HomePageProps> = ({ onNavigate }) => {
             <button
               id="hero-read-quran-btn"
               onClick={() => onNavigate('quran')}
-              className="px-5 py-2.5 bg-amber-400 hover:bg-amber-500 text-emerald-950 font-bold rounded-xl flex items-center gap-2 transition-all shadow-md hover:shadow-lg"
+              className="px-5 py-2.5 bg-amber-400 hover:bg-amber-500 text-emerald-950 font-bold rounded-xl flex items-center gap-2 transition-all shadow-md hover:shadow-lg cursor-pointer text-xs sm:text-sm"
             >
               <BookOpen className="w-4 h-4" />
               <span>Read Online Quran</span>
             </button>
             <button
-              id="hero-prayer-times-btn"
-              onClick={() => onNavigate('prayer-times')}
-              className="px-5 py-2.5 bg-emerald-800/80 hover:bg-emerald-800 text-white font-medium rounded-xl border border-emerald-700 flex items-center gap-2 transition-colors"
+              id="hero-board-notes-btn"
+              onClick={() => onNavigate('study-notes')}
+              className="px-5 py-2.5 bg-emerald-800/80 hover:bg-emerald-800 text-white font-medium rounded-xl border border-emerald-700 flex items-center gap-2 transition-colors cursor-pointer text-xs sm:text-sm"
             >
-              <Clock className="w-4 h-4" />
-              <span>Check Prayer Times</span>
+              <FileText className="w-4 h-4 text-amber-300" />
+              <span>Notes & Materials</span>
+            </button>
+            <button
+              id="hero-convert-guide-btn"
+              onClick={() => onNavigate('convert-guide')}
+              className="px-5 py-2.5 bg-emerald-800/80 hover:bg-emerald-700 text-amber-200 font-medium rounded-xl border border-emerald-600 flex items-center gap-2 transition-colors cursor-pointer text-xs sm:text-sm"
+            >
+              <HeartHandshake className="w-4 h-4 text-amber-300" />
+              <span>Convert Guide</span>
             </button>
             <button
               id="hero-community-qa-btn"
               onClick={() => onNavigate('community-qa')}
-              className="px-5 py-2.5 bg-white/10 hover:bg-white/20 text-white font-medium rounded-xl border border-white/20 flex items-center gap-2 transition-colors"
+              className="px-5 py-2.5 bg-white/10 hover:bg-white/20 text-white font-medium rounded-xl border border-white/20 flex items-center gap-2 transition-colors cursor-pointer text-xs sm:text-sm"
             >
               <MessageSquareQuote className="w-4 h-4" />
               <span>Ask & Debate Questions</span>
@@ -161,6 +171,33 @@ export const HomePage: React.FC<HomePageProps> = ({ onNavigate }) => {
             "Our Lord, give us in this world that which is good and in the Hereafter that which is good..." (2:201)
           </div>
         </div>
+      </section>
+
+      {/* Humble Welcome for New Converts & Seekers */}
+      <section className="bg-gradient-to-r from-amber-50 via-emerald-50 to-teal-50 border border-amber-200/80 rounded-3xl p-6 sm:p-8 flex flex-col md:flex-row items-center justify-between gap-6 shadow-xs">
+        <div className="flex items-start gap-4">
+          <div className="w-12 h-12 rounded-2xl bg-amber-200/80 text-amber-900 flex items-center justify-center shrink-0 shadow-2xs">
+            <HeartHandshake className="w-6 h-6 text-emerald-900" />
+          </div>
+          <div className="space-y-1">
+            <span className="text-[11px] font-bold uppercase tracking-wider text-emerald-800">
+              New to Islam or Seeking Knowledge?
+            </span>
+            <h2 className="text-lg sm:text-xl font-bold text-stone-900">
+              A Warm, Humble Welcome to Our Convert Guide
+            </h2>
+            <p className="text-xs sm:text-sm text-stone-600 max-w-2xl leading-relaxed">
+              Congratulations on taking this noble step! We designed a gentle, zero-stress guide covering the Shahada, beginner-friendly prayer steps, halal living, handling family relationships, and common questions.
+            </p>
+          </div>
+        </div>
+        <button
+          onClick={() => onNavigate('convert-guide')}
+          className="px-5 py-2.5 bg-emerald-800 hover:bg-emerald-900 text-white font-bold text-xs sm:text-sm rounded-xl shadow-xs transition-colors shrink-0 flex items-center gap-2 cursor-pointer"
+        >
+          <span>Explore Convert Guide</span>
+          <ArrowRight className="w-4 h-4" />
+        </button>
       </section>
 
       {/* Featured Quote & Hadith of the Day */}

@@ -5,6 +5,13 @@ export interface PrintableChartItem {
   category: string;
   description: string;
   orientation: 'portrait' | 'landscape';
+  imageUrl?: string;
+  attachments?: {
+    name: string;
+    type: string;
+    size: string;
+    dataUrl: string;
+  }[];
   sections: {
     heading: string;
     subtext?: string;
