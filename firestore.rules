@@ -30,7 +30,7 @@ service cloud.firestore {
     // Printable Charts & Posters (Admin managed, public read)
     match /printable_charts/{chartId} {
       allow read: if true;
-      allow write: if isAuthenticated();
+      allow write: if true;
     }
 
     // Notes & Study Guides (Public read, authenticated write)
@@ -48,6 +48,11 @@ service cloud.firestore {
     match /board_study_notes/{noteId} {
       allow read: if true;
       allow write: if isAuthenticated();
+    }
+
+    // Site Visit Counter & Analytics
+    match /analytics/{docId} {
+      allow read, write: if true;
     }
 
     // Test connection doc

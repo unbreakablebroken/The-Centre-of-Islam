@@ -7,6 +7,10 @@ import {
   onAuthStateChanged,
   signInAnonymously,
   updateProfile,
+  signInWithEmailAndPassword,
+  createUserWithEmailAndPassword,
+  sendPasswordResetEmail,
+  sendEmailVerification,
   type User 
 } from 'firebase/auth';
 import { getFirestore, doc, getDocFromServer } from 'firebase/firestore';
@@ -22,7 +26,17 @@ export const db = firebaseConfig.firestoreDatabaseId && firebaseConfig.firestore
   ? getFirestore(app, firebaseConfig.firestoreDatabaseId)
   : getFirestore(app);
 
-export { signInWithPopup, signOut, onAuthStateChanged, signInAnonymously, updateProfile };
+export { 
+  signInWithPopup, 
+  signOut, 
+  onAuthStateChanged, 
+  signInAnonymously, 
+  updateProfile,
+  signInWithEmailAndPassword,
+  createUserWithEmailAndPassword,
+  sendPasswordResetEmail,
+  sendEmailVerification
+};
 export type { User };
 
 // Test connection

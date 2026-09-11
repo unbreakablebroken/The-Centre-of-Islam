@@ -185,9 +185,26 @@
         "createdAt": { "type": "string", "description": "ISO timestamp" }
       },
       "required": ["email", "code", "expiresAt", "used", "createdAt"]
+    },
+    "SiteVisitCounter": {
+      "title": "Site Visit Counter & Analytics",
+      "description": "Stores overall and daily visitor traffic analytics for Centre of Islam.",
+      "type": "object",
+      "properties": {
+        "totalVisits": { "type": "number", "description": "Aggregate count of page views and visits" },
+        "uniqueVisitors": { "type": "number", "description": "Count of unique visitor sessions identified" },
+        "todayVisits": { "type": "number", "description": "Visits recorded for the current day" },
+        "todayKey": { "type": "string", "description": "Current day key formatted YYYY-MM-DD" },
+        "lastVisitAt": { "type": "string", "description": "ISO timestamp of the most recent visit" }
+      },
+      "required": ["totalVisits"]
     }
   },
   "firestore": {
+    "/analytics/{docId}": {
+      "schema": "SiteVisitCounter",
+      "description": "Website visitor counts and traffic metrics."
+    },
     "/questions/{questionId}": {
       "schema": "Question",
       "description": "Collection of community discussion questions and debate topics."

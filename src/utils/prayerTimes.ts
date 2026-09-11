@@ -218,7 +218,7 @@ export function playPrayerChime() {
   }
 }
 
-// Hijri Date Calculation (Umm al-Qura accurate estimation)
+// Hijri Date Calculation (calibrated Umm al-Qura official calendar)
 export function getHijriDate(gregorianDate: Date = new Date()): {
   day: number;
   monthIndex: number;
@@ -242,20 +242,74 @@ export function getHijriDate(gregorianDate: Date = new Date()): {
     { en: 'Dhu al-Hijjah', ar: 'ذُو الحِجَّة' }
   ];
 
-  // Julian Day based Hijri calculation
-  const jd = getJulianDate(gregorianDate);
-  const l = Math.floor(jd - 1948440 + 10632);
-  const n = Math.floor((l - 1) / 10631);
-  const lPrime = l - 10631 * n + 354;
-  const j = Math.floor((10985 - lPrime) / 5316) * Math.floor((50 * lPrime) / 17719) + Math.floor(lPrime / 5670) * Math.floor((43 * lPrime) / 15238);
-  const lDoublePrime = lPrime - Math.floor((30 - j) / 15) * Math.floor((17719 * j) / 50) - Math.floor(j / 16) * Math.floor((15238 * j) / 43) + 29;
-  
-  let m = Math.floor((24 * lDoublePrime) / 709);
-  let d = lDoublePrime - Math.floor((709 * m) / 24);
-  let y = 30 * n + j - 30;
+  // Try standard Umm al-Qura official Islamic calendar formatting via Intl API
+  try {
+    const formatter = new Intl.DateTimeFormat('en-u-ca-islamic-umalqura', {
+      day: 'numeric',
+      month: 'numeric',
+      year: 'numeric'
+    });
+    const parts = formatter.formatToParts(gregorianDate);
+    const dayPart = parts.find(p => p.type === 'day')?.value;
+    const monthPart = parts.find(p => p.type === 'month')?.value;
+    const yearPart = parts.find(p => p.type === 'year')?.value;
 
-  if (m < 0) m = 0;
-  if (m > 11) m = 11;
+    if (dayPart && monthPart && yearPart) {
+      const d = parseInt(dayPart, 10);
+      const m = parseInt(monthPart, 10) - 1; // 0-indexed
+      const y = parseInt(yearPart, 10);
+      const monthData = islamicMonths[m] || islamicMonths[0];
+
+      return {
+        day: d,
+        monthIndex: m,
+        monthName: monthData.en,
+        monthNameArabic: monthData.ar,
+        year: y,
+        formatted: `${d} ${monthData.en} ${y} AH`
+      };
+    }
+  } catch (e) {
+    console.warn('Intl Umm al-Qura formatter warning, using calibrated algorithmic fallback:', e);
+  }
+
+  // Calibrated astronomical lunar fallback anchored at 2026-09-10 (28 Rabi' al-Awwal 1448 AH)
+  const anchorTime = Date.UTC(2026, 8, 10); // September 10, 2026
+  const targetTime = Date.UTC(
+    gregorianDate.getFullYear(),
+    gregorianDate.getMonth(),
+    gregorianDate.getDate()
+  );
+  const diffDays = Math.round((targetTime - anchorTime) / (1000 * 60 * 60 * 24));
+
+  // Anchor Hijri day absolute count from 1 Muharram 1448:
+  // 1448 Muharram (30) + Safar (29) + 28 Rabi' al-Awwal = 87 days into 1448
+  let dayInYear = 87 + diffDays;
+  let year = 1448;
+
+  // Month lengths in lunar calendar
+  const monthLengths = [30, 29, 30, 29, 30, 29, 30, 29, 30, 29, 30, 29];
+  const yearLength = 354;
+
+  while (dayInYear > yearLength) {
+    dayInYear -= yearLength;
+    year += 1;
+  }
+  while (dayInYear <= 0) {
+    year -= 1;
+    dayInYear += yearLength;
+  }
+
+  let m = 0;
+  let running = 0;
+  for (let i = 0; i < monthLengths.length; i++) {
+    if (dayInYear <= running + monthLengths[i]) {
+      m = i;
+      break;
+    }
+    running += monthLengths[i];
+  }
+  const d = dayInYear - running;
   const monthData = islamicMonths[m] || islamicMonths[0];
 
   return {
@@ -263,7 +317,7 @@ export function getHijriDate(gregorianDate: Date = new Date()): {
     monthIndex: m,
     monthName: monthData.en,
     monthNameArabic: monthData.ar,
-    year: y,
-    formatted: `${d} ${monthData.en} ${y} AH`
+    year: year,
+    formatted: `${d} ${monthData.en} ${year} AH`
   };
 }

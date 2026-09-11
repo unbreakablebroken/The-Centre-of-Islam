@@ -1,12 +1,14 @@
 import React from 'react';
 import { PageId } from '../types';
-import { Moon, Heart, Shield, BookOpen, ExternalLink } from 'lucide-react';
+import { Moon, Heart, Shield, BookOpen, ExternalLink, Users, Eye } from 'lucide-react';
+import { useVisitor } from '../context/VisitorContext';
 
 interface FooterProps {
   onNavigate: (page: PageId) => void;
 }
 
 export const Footer: React.FC<FooterProps> = ({ onNavigate }) => {
+  const { stats } = useVisitor();
   return (
     <footer className="bg-stone-900 text-stone-300 border-t border-stone-800 no-print">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
@@ -132,6 +134,21 @@ export const Footer: React.FC<FooterProps> = ({ onNavigate }) => {
 
         <div className="mt-12 pt-6 border-t border-stone-800 flex flex-col sm:flex-row items-center justify-between text-xs text-stone-500 gap-4">
           <p>© {new Date().getFullYear()} Centre of Islam. All religious and educational resources are dedicated for public benefit.</p>
+          
+          {/* Real-time Visit Counter Badge */}
+          <div className="flex items-center gap-3 bg-stone-800/80 border border-stone-700/60 rounded-full px-3.5 py-1 text-stone-300 text-[11px]">
+            <span className="flex items-center gap-1.5 font-medium">
+              <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
+              <Eye className="w-3.5 h-3.5 text-emerald-400" />
+              <span>Visits:</span>
+              <strong className="text-white font-semibold">{stats.loading ? '...' : stats.totalVisits.toLocaleString()}</strong>
+            </span>
+            <span className="text-stone-600">|</span>
+            <span className="text-stone-400">
+              Today: <strong className="text-emerald-300">{stats.loading ? '...' : stats.todayVisits.toLocaleString()}</strong>
+            </span>
+          </div>
+
           <div className="flex items-center gap-2">
             <span>May Allah accept all righteous intentions and efforts.</span>
           </div>

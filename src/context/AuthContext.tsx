@@ -7,31 +7,33 @@ import {
   onAuthStateChanged, 
   signInAnonymously,
   updateProfile,
-  User,
-  db
+  signInWithEmailAndPassword,
+  createUserWithEmailAndPassword,
+  sendPasswordResetEmail,
+  sendEmailVerification,
+  User 
 } from '../lib/firebase';
-import { 
-  collection, 
-  addDoc, 
-  getDocs, 
-  query, 
-  where, 
-  updateDoc, 
-  doc 
-} from 'firebase/firestore';
 import { UserProfile } from '../types';
 
-const ADMIN_EMAILS = ['homamfazal@gmail.com'];
-const ADMIN_PASSCODE = 'centre2026';
+export const ADMIN_EMAILS = [
+  'homamfazal@gmail.com',
+  'homam3@insight.edu.in'
+];
+
+export const isAdminEmail = (email?: string | null): boolean => {
+  if (!email) return false;
+  return ADMIN_EMAILS.includes(email.trim().toLowerCase());
+};
 
 interface AuthContextType {
   user: UserProfile | null;
   rawUser: User | null;
   loading: boolean;
   loginWithGoogle: () => Promise<void>;
+  loginWithEmailPassword: (email: string, password: string) => Promise<void>;
+  signUpWithEmailPassword: (email: string, password: string, displayName?: string) => Promise<void>;
+  sendPasswordReset: (email: string) => Promise<{ success: boolean; message: string }>;
   loginAsGuest: (name: string) => Promise<void>;
-  sendVerificationCodeToEmail: (email: string, displayName?: string) => Promise<{ success: boolean; code?: string; message?: string }>;
-  verifyEmailCodeAndLogin: (email: string, code: string, displayName?: string) => Promise<boolean>;
   logout: () => Promise<void>;
   authModalOpen: boolean;
   setAuthModalOpen: (open: boolean) => void;
@@ -41,9 +43,13 @@ interface AuthContextType {
   authNoticeMessage?: string;
   openAuthModalWithNotice: (notice?: string) => void;
   isAdmin: boolean;
-  verifyAdminPasscode: (code: string) => boolean;
-  grantAdminAccess: () => void;
-  revokeAdminAccess: () => void;
+  isAuthorizedAdminEmail: boolean;
+  adminSessionVerified: boolean;
+  verifyAdminSessionLogin: (email: string) => boolean;
+  lockAdminSession: () => void;
+  // Backward compatibility signatures
+  sendVerificationCodeToEmail?: (email: string, displayName?: string) => Promise<{ success: boolean; code?: string; message?: string }>;
+  verifyEmailCodeAndLogin?: (email: string, code: string, displayName?: string) => Promise<boolean>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -54,43 +60,23 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [loading, setLoading] = useState(true);
   const [authModalOpen, setAuthModalOpen] = useState(false);
   const [authModalNotice, setAuthModalNotice] = useState<string | undefined>(undefined);
-  const [manualAdminUnlocked, setManualAdminUnlocked] = useState<boolean>(() => {
-    try {
-      return localStorage.getItem('coi_admin_unlocked') === 'true';
-    } catch {
-      return false;
-    }
-  });
+  // Admin session is intentionally in-memory only (defaults to false)
+  // User explicitly instructed: "require it to log in every time i try to enter"
+  const [adminSessionVerified, setAdminSessionVerified] = useState<boolean>(false);
 
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, (currentUser) => {
       setRawUser(currentUser);
       if (currentUser) {
-        // Check if there is a saved verified email session
-        const savedEmail = localStorage.getItem('coi_verified_email');
-        const savedName = localStorage.getItem('coi_verified_name');
-        
         setUser({
           uid: currentUser.uid,
-          displayName: currentUser.displayName || savedName || (currentUser.isAnonymous ? 'Guest Muslim' : 'Community Member'),
-          email: currentUser.email || savedEmail || undefined,
+          displayName: currentUser.displayName || (currentUser.isAnonymous ? 'Guest Muslim' : 'Community Member'),
+          email: currentUser.email || undefined,
           photoURL: currentUser.photoURL,
-          isAnonymous: currentUser.isAnonymous && !savedEmail
+          isAnonymous: currentUser.isAnonymous
         });
       } else {
-        // Even if Firebase auth is null, check if we have an active verified session
-        const savedEmail = localStorage.getItem('coi_verified_email');
-        const savedName = localStorage.getItem('coi_verified_name');
-        if (savedEmail) {
-          setUser({
-            uid: `verified_${savedEmail}`,
-            displayName: savedName || savedEmail.split('@')[0],
-            email: savedEmail,
-            isAnonymous: false
-          });
-        } else {
-          setUser(null);
-        }
+        setUser(null);
       }
       setLoading(false);
     });
@@ -98,151 +84,110 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     return () => unsubscribe();
   }, []);
 
-  const sendVerificationCodeToEmail = async (
-    email: string, 
-    displayName?: string
-  ): Promise<{ success: boolean; code?: string; message?: string }> => {
+  const loginWithGoogle = async () => {
+    try {
+      const result = await signInWithPopup(auth, googleProvider);
+      if (result.user) {
+        if (isAdminEmail(result.user.email)) {
+          setAdminSessionVerified(true);
+        }
+        setAuthModalOpen(false);
+      }
+    } catch (err: any) {
+      console.error('Google Sign-in failed:', err);
+      if (err?.code === 'auth/unauthorized-domain' || err?.message?.includes('auth/unauthorized-domain')) {
+        const currentHost = typeof window !== 'undefined' ? window.location.hostname : 'run.app';
+        throw new Error(
+          `Firebase Domain Authorization Required: The domain '${currentHost}' has not yet been authorized in Firebase Auth. ` +
+          `Please add '${currentHost}' and 'centre-of-islam.vercel.app' under Firebase Console > Authentication > Settings > Authorized domains. ` +
+          `In the meantime, you can sign in directly with Email & Password below!`
+        );
+      }
+      throw err;
+    }
+  };
+
+  const loginWithEmailPassword = async (email: string, password: string) => {
+    const cleanEmail = email.trim().toLowerCase();
+    if (!cleanEmail || !cleanEmail.includes('@')) {
+      throw new Error('Please enter a valid email address.');
+    }
+    if (!password) {
+      throw new Error('Please enter your password.');
+    }
+
+    try {
+      const res = await signInWithEmailAndPassword(auth, cleanEmail, password);
+      if (res.user && isAdminEmail(res.user.email)) {
+        setAdminSessionVerified(true);
+      }
+      setAuthModalOpen(false);
+    } catch (err: any) {
+      if (err.code === 'auth/user-not-found' || err.code === 'auth/wrong-password' || err.code === 'auth/invalid-credential') {
+        throw new Error('Incorrect email or password. If you are new or forgot your password, please click "Create Account" or "Forgot Password".');
+      }
+      if (err.code === 'auth/too-many-requests') {
+        throw new Error('Access temporarily blocked due to multiple failed attempts. Please reset your password or try again in a few minutes.');
+      }
+      throw new Error(err.message || 'Email authentication failed.');
+    }
+  };
+
+  const signUpWithEmailPassword = async (email: string, password: string, displayName?: string) => {
+    const cleanEmail = email.trim().toLowerCase();
+    if (!cleanEmail || !cleanEmail.includes('@')) {
+      throw new Error('Please enter a valid email address.');
+    }
+    if (password.length < 6) {
+      throw new Error('Password must be at least 6 characters long.');
+    }
+
+    try {
+      const res = await createUserWithEmailAndPassword(auth, cleanEmail, password);
+      const name = displayName?.trim() || cleanEmail.split('@')[0];
+      try {
+        await updateProfile(res.user, { displayName: name });
+      } catch {}
+
+      try {
+        // Send actual verification email via Firebase / Google
+        await sendEmailVerification(res.user);
+      } catch (err) {
+        console.warn('sendEmailVerification notice:', err);
+      }
+
+      if (res.user && isAdminEmail(res.user.email)) {
+        setAdminSessionVerified(true);
+      }
+      setAuthModalOpen(false);
+    } catch (err: any) {
+      if (err.code === 'auth/email-already-in-use') {
+        throw new Error('An account with this email already exists. Please switch to "Sign In" with your password, or click "Forgot Password".');
+      }
+      if (err.code === 'auth/weak-password') {
+        throw new Error('Password is too weak. Please use at least 6 characters with a mixture of letters and numbers.');
+      }
+      throw new Error(err.message || 'Account registration failed.');
+    }
+  };
+
+  const sendPasswordReset = async (email: string): Promise<{ success: boolean; message: string }> => {
     const cleanEmail = email.trim().toLowerCase();
     if (!cleanEmail || !cleanEmail.includes('@')) {
       throw new Error('Please enter a valid email address.');
     }
 
-    // Generate a secure 6-digit verification code
-    const code = Math.floor(100000 + Math.random() * 900000).toString();
-    const expiresAt = Date.now() + 15 * 60 * 1000; // 15 minutes validity
-
-    // 1. Store in Firestore database
     try {
-      await addDoc(collection(db, 'email_verifications'), {
-        email: cleanEmail,
-        code,
-        displayName: displayName || '',
-        expiresAt,
-        used: false,
-        createdAt: new Date().toISOString()
-      });
+      await sendPasswordResetEmail(auth, cleanEmail);
+      return {
+        success: true,
+        message: `A password reset link has been dispatched by Firebase to ${cleanEmail}. Please check your Gmail or email inbox.`
+      };
     } catch (err: any) {
-      console.warn('Firestore verification code logging warning:', err);
-    }
-
-    // 2. Store in local state/storage for reliable verification fallback
-    try {
-      localStorage.setItem(`coi_pending_otp_${cleanEmail}`, JSON.stringify({
-        code,
-        expiresAt,
-        displayName: displayName || ''
-      }));
-    } catch {}
-
-    return {
-      success: true,
-      code,
-      message: `A 6-digit verification code has been generated for ${cleanEmail}.`
-    };
-  };
-
-  const verifyEmailCodeAndLogin = async (
-    email: string, 
-    enteredCode: string, 
-    displayName?: string
-  ): Promise<boolean> => {
-    const cleanEmail = email.trim().toLowerCase();
-    const cleanCode = enteredCode.trim();
-
-    let isValid = false;
-
-    // Check Firestore database
-    try {
-      const q = query(
-        collection(db, 'email_verifications'),
-        where('email', '==', cleanEmail),
-        where('code', '==', cleanCode),
-        where('used', '==', false)
-      );
-      const snap = await getDocs(q);
-      if (!snap.empty) {
-        const docRef = snap.docs[0];
-        const data = docRef.data();
-        if (data.expiresAt > Date.now()) {
-          isValid = true;
-          try {
-            await updateDoc(doc(db, 'email_verifications', docRef.id), { used: true });
-          } catch {}
-        }
+      if (err.code === 'auth/user-not-found') {
+        throw new Error(`No account found registered under ${cleanEmail}. Please create an account first.`);
       }
-    } catch (err) {
-      console.warn('Firestore code check warning:', err);
-    }
-
-    // Check fallback storage
-    if (!isValid) {
-      try {
-        const stored = localStorage.getItem(`coi_pending_otp_${cleanEmail}`);
-        if (stored) {
-          const parsed = JSON.parse(stored);
-          if (parsed.code === cleanCode && parsed.expiresAt > Date.now()) {
-            isValid = true;
-            localStorage.removeItem(`coi_pending_otp_${cleanEmail}`);
-          }
-        }
-      } catch {}
-    }
-
-    if (!isValid) {
-      return false;
-    }
-
-    // Ensure Firebase auth session exists
-    let currentUser = auth.currentUser;
-    if (!currentUser) {
-      try {
-        const res = await signInAnonymously(auth);
-        currentUser = res.user;
-      } catch {}
-    }
-
-    const finalDisplayName = displayName?.trim() || cleanEmail.split('@')[0];
-    if (currentUser) {
-      try {
-        await updateProfile(currentUser, { displayName: finalDisplayName });
-      } catch {}
-    }
-
-    const profile: UserProfile = {
-      uid: currentUser?.uid || `verified_${Date.now()}`,
-      displayName: finalDisplayName,
-      email: cleanEmail,
-      isAnonymous: false
-    };
-
-    setUser(profile);
-
-    try {
-      localStorage.setItem('coi_verified_email', cleanEmail);
-      localStorage.setItem('coi_verified_name', finalDisplayName);
-    } catch {}
-
-    // If admin email, grant admin privileges
-    if (ADMIN_EMAILS.includes(cleanEmail)) {
-      setManualAdminUnlocked(true);
-      try {
-        localStorage.setItem('coi_admin_unlocked', 'true');
-      } catch {}
-    }
-
-    setAuthModalOpen(false);
-    return true;
-  };
-
-  const loginWithGoogle = async () => {
-    try {
-      const result = await signInWithPopup(auth, googleProvider);
-      if (result.user) {
-        setAuthModalOpen(false);
-      }
-    } catch (err: any) {
-      console.error('Google Sign-in failed:', err);
-      throw err;
+      throw new Error(err.message || 'Failed to dispatch password reset email.');
     }
   };
 
@@ -263,12 +208,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   const logout = async () => {
     await signOut(auth);
-    setManualAdminUnlocked(false);
-    try {
-      localStorage.removeItem('coi_admin_unlocked');
-      localStorage.removeItem('coi_verified_email');
-      localStorage.removeItem('coi_verified_name');
-    } catch {}
+    setAdminSessionVerified(false);
     setUser(null);
   };
 
@@ -282,33 +222,21 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     setAuthModalNotice(undefined);
   };
 
-  // Determine admin privileges
-  const isOwnerEmail = user?.email && ADMIN_EMAILS.includes(user.email.toLowerCase());
-  const isAdmin = Boolean(isOwnerEmail || manualAdminUnlocked);
+  // Determine admin privileges: strictly restricted to homamfazal@gmail.com and homam3@insight.edu.in
+  const isAuthorizedAdminEmail = Boolean(user?.email && isAdminEmail(user.email));
+  // User explicitly instructed: "require it to log in every time i try to enter"
+  const isAdmin = Boolean(isAuthorizedAdminEmail && adminSessionVerified);
 
-  const verifyAdminPasscode = (code: string): boolean => {
-    if (code.trim() === ADMIN_PASSCODE) {
-      setManualAdminUnlocked(true);
-      try {
-        localStorage.setItem('coi_admin_unlocked', 'true');
-      } catch {}
+  const verifyAdminSessionLogin = (email: string): boolean => {
+    if (isAdminEmail(email)) {
+      setAdminSessionVerified(true);
       return true;
     }
     return false;
   };
 
-  const grantAdminAccess = () => {
-    setManualAdminUnlocked(true);
-    try {
-      localStorage.setItem('coi_admin_unlocked', 'true');
-    } catch {}
-  };
-
-  const revokeAdminAccess = () => {
-    setManualAdminUnlocked(false);
-    try {
-      localStorage.removeItem('coi_admin_unlocked');
-    } catch {}
+  const lockAdminSession = () => {
+    setAdminSessionVerified(false);
   };
 
   return (
@@ -318,9 +246,10 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         rawUser,
         loading,
         loginWithGoogle,
+        loginWithEmailPassword,
+        signUpWithEmailPassword,
+        sendPasswordReset,
         loginAsGuest,
-        sendVerificationCodeToEmail,
-        verifyEmailCodeAndLogin,
         logout,
         authModalOpen,
         setAuthModalOpen,
@@ -330,9 +259,10 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         authNoticeMessage: authModalNotice,
         openAuthModalWithNotice,
         isAdmin,
-        verifyAdminPasscode,
-        grantAdminAccess,
-        revokeAdminAccess
+        isAuthorizedAdminEmail,
+        adminSessionVerified,
+        verifyAdminSessionLogin,
+        lockAdminSession
       }}
     >
       {children}

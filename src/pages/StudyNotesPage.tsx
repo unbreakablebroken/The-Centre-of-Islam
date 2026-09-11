@@ -68,7 +68,7 @@ const DEFAULT_NOTES: GeneralNoteItem[] = [
         modelAnswer: 'Under Abu Bakr, Umar (ra) feared the loss of the Quran after the martyrdom of many Huffadh at the Battle of Yamama. Under Uthman, regional variations in dialect caused disputes among soldiers in Armenia and Azerbaijan, prompting a standardized vocalic and consonantal text.'
       }
     ],
-    authorEmail: 'curriculum@centreofislam.org',
+    authorEmail: 'curriculum@centre-of-islam.vercel.app',
     createdAt: '2026-03-01T00:00:00.000Z'
   },
   {
@@ -105,7 +105,7 @@ The 5 Conditions of a Sahih (Authentic) Hadith:
         modelAnswer: '1. Continuous chain (Ittisal), 2. Character integrity (Adalah), 3. Retention/precision (Dabt), 4. No anomalies against established narrations (No Shudhudh), 5. Absence of obscure defects (No Illah).'
       }
     ],
-    authorEmail: 'curriculum@centreofislam.org',
+    authorEmail: 'curriculum@centre-of-islam.vercel.app',
     createdAt: '2026-03-02T00:00:00.000Z'
   },
   {
@@ -139,7 +139,7 @@ Secondary Sources (Systematic Methodological Tools):
         modelAnswer: 'The 4 components are: 1. Asl (original case - wine), 2. Far\' (new case - modern narcotic), 3. Hukm (ruling - prohibition), 4. \'Illah (shared cause - intoxication and clouding of intellect).'
       }
     ],
-    authorEmail: 'curriculum@centreofislam.org',
+    authorEmail: 'curriculum@centre-of-islam.vercel.app',
     createdAt: '2026-03-03T00:00:00.000Z'
   }
 ];

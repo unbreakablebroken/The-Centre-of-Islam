@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { PageId } from './types';
 import { AuthProvider, useAuth } from './context/AuthContext';
+import { VisitorProvider } from './context/VisitorContext';
 import { Navbar } from './components/Navbar';
 import { Footer } from './components/Footer';
 import { AuthModal } from './components/AuthModal';
@@ -122,7 +123,9 @@ function AppContent() {
 export default function App() {
   return (
     <AuthProvider>
-      <AppContent />
+      <VisitorProvider>
+        <AppContent />
+      </VisitorProvider>
     </AuthProvider>
   );
 }
