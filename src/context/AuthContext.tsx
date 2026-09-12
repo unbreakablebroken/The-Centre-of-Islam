@@ -14,6 +14,7 @@ import {
   User 
 } from '../lib/firebase';
 import { UserProfile } from '../types';
+import { verifyAdminPassword } from '../lib/adminSecurity';
 
 export const ADMIN_EMAILS = [
   'homamfazal@gmail.com',
@@ -46,7 +47,8 @@ interface AuthContextType {
   isAuthorizedAdminEmail: boolean;
   adminSessionVerified: boolean;
   adminPasskeyUnlocked: boolean;
-  unlockAdminWithPasskey: (passkey: string) => boolean;
+  unlockAdminWithPassword: (password: string) => Promise<boolean>;
+  unlockAdminWithPasskey: (passkey: string) => Promise<boolean>;
   verifyAdminSessionLogin: (email: string) => boolean;
   lockAdminSession: () => void;
   // Backward compatibility signatures
@@ -62,8 +64,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [loading, setLoading] = useState(true);
   const [authModalOpen, setAuthModalOpen] = useState(false);
   const [authModalNotice, setAuthModalNotice] = useState<string | undefined>(undefined);
-  // Admin session is intentionally in-memory only (defaults to false)
-  // User explicitly instructed: "require it to log in every time i try to enter"
+  
+  // Administrator access is granted exclusively through secure password verification
+  const [adminSessionUnlocked, setAdminSessionUnlocked] = useState<boolean>(false);
   const [adminSessionVerified, setAdminSessionVerified] = useState<boolean>(false);
   const [adminPasskeyUnlocked, setAdminPasskeyUnlocked] = useState<boolean>(false);
 
@@ -91,9 +94,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     try {
       const result = await signInWithPopup(auth, googleProvider);
       if (result.user) {
-        if (isAdminEmail(result.user.email)) {
-          setAdminSessionVerified(true);
-        }
         setAuthModalOpen(false);
       }
     } catch (err: any) {
@@ -121,9 +121,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
     try {
       const res = await signInWithEmailAndPassword(auth, cleanEmail, password);
-      if (res.user && isAdminEmail(res.user.email)) {
-        setAdminSessionVerified(true);
-      }
       setAuthModalOpen(false);
     } catch (err: any) {
       if (err.code === 'auth/user-not-found' || err.code === 'auth/wrong-password' || err.code === 'auth/invalid-credential') {
@@ -159,9 +156,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         console.warn('sendEmailVerification notice:', err);
       }
 
-      if (res.user && isAdminEmail(res.user.email)) {
-        setAdminSessionVerified(true);
-      }
       setAuthModalOpen(false);
     } catch (err: any) {
       if (err.code === 'auth/email-already-in-use') {
@@ -211,7 +205,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   const logout = async () => {
     await signOut(auth);
+    setAdminSessionUnlocked(false);
     setAdminSessionVerified(false);
+    setAdminPasskeyUnlocked(false);
     setUser(null);
   };
 
@@ -225,30 +221,30 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     setAuthModalNotice(undefined);
   };
 
-  // Determine admin privileges: either authorized email session or secret passkey unlock
+  // Administrator privilege is solely governed by explicit password verification in this session
   const isAuthorizedAdminEmail = Boolean(user?.email && isAdminEmail(user.email));
-  const isAdmin = Boolean(adminPasskeyUnlocked || (isAuthorizedAdminEmail && adminSessionVerified));
+  const isAdmin = adminSessionUnlocked;
 
-  const unlockAdminWithPasskey = (passkey: string): boolean => {
-    const trimmed = passkey.trim();
-    const storedCustom = typeof window !== 'undefined' ? localStorage.getItem('centre_admin_passkey') : null;
-    // Allow master passkeys or custom configured passkey
-    if (trimmed === 'centre2026' || trimmed === 'admin2026' || trimmed === 'islam2026' || (storedCustom && trimmed === storedCustom)) {
-      setAdminPasskeyUnlocked(true);
+  const unlockAdminWithPassword = async (password: string): Promise<boolean> => {
+    const valid = await verifyAdminPassword(password);
+    if (valid) {
+      setAdminSessionUnlocked(true);
       return true;
     }
     return false;
   };
 
-  const verifyAdminSessionLogin = (email: string): boolean => {
-    if (isAdminEmail(email)) {
-      setAdminSessionVerified(true);
-      return true;
-    }
+  const unlockAdminWithPasskey = async (passkey: string): Promise<boolean> => {
+    return unlockAdminWithPassword(passkey);
+  };
+
+  const verifyAdminSessionLogin = (_email: string): boolean => {
+    // All other login methods disabled for admin elevation as requested
     return false;
   };
 
   const lockAdminSession = () => {
+    setAdminSessionUnlocked(false);
     setAdminSessionVerified(false);
     setAdminPasskeyUnlocked(false);
   };
@@ -276,6 +272,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         isAuthorizedAdminEmail,
         adminSessionVerified,
         adminPasskeyUnlocked,
+        unlockAdminWithPassword,
         unlockAdminWithPasskey,
         verifyAdminSessionLogin,
         lockAdminSession

@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { useAuth, ADMIN_EMAILS, isAdminEmail } from '../context/AuthContext';
+import { useAuth } from '../context/AuthContext';
 import { useVisitor } from '../context/VisitorContext';
 import { PageId, AdminPrintableChart, GeneralNoteItem, NoteAttachment, Question } from '../types';
 import { db } from '../lib/firebase';
@@ -36,10 +36,8 @@ import {
   Users,
   RefreshCw,
   LogOut,
-  Mail,
   KeyRound,
   EyeOff,
-  Copy,
   Flag,
   AlertTriangle
 } from 'lucide-react';
@@ -52,31 +50,17 @@ export const AdminPage: React.FC<AdminPageProps> = ({ onNavigate }) => {
   const { 
     user, 
     isAdmin, 
-    isAuthorizedAdminEmail,
-    adminSessionVerified,
-    loginWithGoogle, 
-    loginWithEmailPassword,
-    sendPasswordReset,
-    verifyAdminSessionLogin, 
     lockAdminSession,
-    unlockAdminWithPasskey
+    unlockAdminWithPassword
   } = useAuth();
   const { stats: visitorStats, refreshStats: refreshVisitorStats } = useVisitor();
   const [activeTab, setActiveTab] = useState<'notes' | 'charts' | 'spam'>('notes');
 
-  // Admin authentication form states
-  const [adminPasskeyInput, setAdminPasskeyInput] = useState<string>('');
-  const [passkeyError, setPasskeyError] = useState<string | null>(null);
-  const [selectedAdminEmail, setSelectedAdminEmail] = useState<string>(ADMIN_EMAILS[0]);
-  const [customEmailInput, setCustomEmailInput] = useState<string>('');
-  const [useCustomEmail, setUseCustomEmail] = useState<boolean>(false);
-  const [adminPassword, setAdminPassword] = useState('');
-  const [showAdminPassword, setShowAdminPassword] = useState(false);
-  const [isSubmitting, setIsSubmitting] = useState(false);
-  const [authError, setAuthError] = useState<string | null>(null);
-  const [authSuccess, setAuthSuccess] = useState<string | null>(null);
-  const [unauthorizedDomainError, setUnauthorizedDomainError] = useState(false);
-  const [copiedDomain, setCopiedDomain] = useState<string | null>(null);
+  // Admin exclusive password authentication states
+  const [adminPasswordInput, setAdminPasswordInput] = useState<string>('');
+  const [showAdminPassword, setShowAdminPassword] = useState<boolean>(false);
+  const [passwordError, setPasswordError] = useState<string | null>(null);
+  const [isVerifyingPassword, setIsVerifyingPassword] = useState<boolean>(false);
   const [isRefreshingStats, setIsRefreshingStats] = useState(false);
 
   // Lists of records
@@ -278,77 +262,6 @@ export const AdminPage: React.FC<AdminPageProps> = ({ onNavigate }) => {
       loadAdminItems();
     }
   }, [isAdmin]);
-
-  const getTargetAdminEmail = (): string => {
-    return (useCustomEmail ? customEmailInput : selectedAdminEmail).trim().toLowerCase();
-  };
-
-  const handleGoogleAdminLogin = async () => {
-    setAuthError(null);
-    setAuthSuccess(null);
-    setUnauthorizedDomainError(false);
-    try {
-      await loginWithGoogle();
-      // AuthContext will check if email is in ADMIN_EMAILS and verify session
-    } catch (err: any) {
-      if (err.message && err.message.includes('Firebase Domain Authorization Required')) {
-        setUnauthorizedDomainError(true);
-        setAuthError(err.message);
-      } else {
-        setAuthError(err.message || 'Google sign-in was cancelled or failed.');
-      }
-    }
-  };
-
-  const handleEmailPasswordAdminLogin = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setAuthError(null);
-    setAuthSuccess(null);
-    setUnauthorizedDomainError(false);
-    const email = getTargetAdminEmail();
-
-    if (!isAdminEmail(email)) {
-      setAuthError(`Access Denied: '${email}' is not an authorized administrator. Only homamfazal@gmail.com and homam3@insight.edu.in have administrative privileges.`);
-      return;
-    }
-
-    if (!adminPassword) {
-      setAuthError('Please enter your administrator account password.');
-      return;
-    }
-
-    setIsSubmitting(true);
-    try {
-      await loginWithEmailPassword(email, adminPassword);
-      verifyAdminSessionLogin(email);
-      setAuthSuccess('Administrator authenticated successfully. Unlocking portal...');
-    } catch (err: any) {
-      setAuthError(err.message || 'Authentication failed. If you need to set or reset your password, click "Send Password Reset to Gmail" below.');
-    } finally {
-      setIsSubmitting(false);
-    }
-  };
-
-  const handleAdminPasswordReset = async () => {
-    setAuthError(null);
-    setAuthSuccess(null);
-    const email = getTargetAdminEmail();
-    setIsSubmitting(true);
-    try {
-      const res = await sendPasswordReset(email);
-      setAuthSuccess(res.message);
-    } catch (err: any) {
-      setAuthError(err.message || 'Failed to dispatch password reset email.');
-    } finally {
-      setIsSubmitting(false);
-    }
-  };
-
-  const handleConfirmCurrentAdminSession = () => {
-    if (user?.email && isAdminEmail(user.email)) {
-      verifyAdminSessionLogin(user.email);
-    }
-  };
 
   const handleRefreshTraffic = async () => {
     setIsRefreshingStats(true);
@@ -583,19 +496,26 @@ export const AdminPage: React.FC<AdminPageProps> = ({ onNavigate }) => {
     }
   };
 
-  const handleUnlockWithPasskey = (e: React.FormEvent) => {
+  const handleAdminPasswordSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setPasskeyError(null);
-    if (!adminPasskeyInput.trim()) {
-      setPasskeyError('Please enter the administrator passkey.');
+    setPasswordError(null);
+    if (!adminPasswordInput) {
+      setPasswordError('Please enter the administrator password.');
       return;
     }
-    const ok = unlockAdminWithPasskey(adminPasskeyInput.trim());
-    if (ok) {
-      setAdminPasskeyInput('');
-      setPasskeyError(null);
-    } else {
-      setPasskeyError('Invalid passkey. Default passkey: centre2026');
+    setIsVerifyingPassword(true);
+    try {
+      const isValid = await unlockAdminWithPassword(adminPasswordInput);
+      if (isValid) {
+        setAdminPasswordInput('');
+        setPasswordError(null);
+      } else {
+        setPasswordError('Incorrect administrator password. Access denied.');
+      }
+    } catch (err: any) {
+      setPasswordError('Verification failed. Please try again.');
+    } finally {
+      setIsVerifyingPassword(false);
     }
   };
 
@@ -622,322 +542,87 @@ export const AdminPage: React.FC<AdminPageProps> = ({ onNavigate }) => {
     }
   };
 
-  // If user is not admin or hasn't verified this entry, show strict Admin Gate
+  // If user is not authenticated as admin, show strict Password Gate
   if (!isAdmin) {
-    const isCurrentlyAdminEmail = user?.email && isAdminEmail(user.email);
-
     return (
-      <div className="max-w-lg mx-auto my-10 space-y-6">
+      <div className="max-w-md mx-auto my-12 px-4">
         <div className="bg-white rounded-3xl p-7 sm:p-9 border border-stone-200 shadow-md space-y-6">
-          <div className="text-center space-y-2">
+          <div className="text-center space-y-2.5">
             <div className="w-14 h-14 rounded-2xl bg-emerald-50 border border-emerald-200 text-emerald-800 flex items-center justify-center mx-auto shadow-xs">
               <ShieldCheck className="w-7 h-7" />
             </div>
             <h1 className="text-2xl font-bold text-stone-900 tracking-tight">
               Administrator Security Gate
             </h1>
-            <p className="text-xs text-stone-600 max-w-sm mx-auto">
-              Access is restricted strictly to authorized administrative accounts. Authentication is required every time you enter.
+            <p className="text-xs text-stone-600 max-w-sm mx-auto leading-relaxed">
+              Restricted portal. Please enter your administrator password to unlock publishing and management controls.
             </p>
           </div>
 
-          {/* Authorized Accounts Notice */}
-          <div className="bg-stone-50 border border-stone-200 rounded-2xl p-4 text-xs text-stone-700 space-y-2">
-            <div className="flex items-center gap-1.5 font-bold text-stone-900">
-              <KeyRound className="w-4 h-4 text-emerald-700" />
-              <span>Authorized Administrator Accounts:</span>
-            </div>
-            <ul className="list-disc list-inside space-y-1 pl-1 text-stone-600 font-mono text-[11px]">
-              {ADMIN_EMAILS.map((em) => (
-                <li key={em} className="font-semibold text-emerald-950">
-                  {em}
-                </li>
-              ))}
-            </ul>
-          </div>
-
-          {/* Error / Success Alerts */}
-          {authError && (
-            <div className="p-3.5 bg-rose-50 border border-rose-200 text-rose-800 rounded-xl space-y-2 text-xs">
-              <div className="flex items-start gap-2.5">
-                <AlertCircle className="w-4 h-4 text-rose-600 shrink-0 mt-0.5" />
-                <span className="font-medium flex-1">{authError}</span>
-              </div>
-
-              {unauthorizedDomainError && (
-                <div className="mt-2 pt-2 border-t border-rose-200 space-y-2 text-[11px] text-rose-950">
-                  <p className="font-semibold">
-                    To authorize Google Sign-In in Firebase Console:
-                  </p>
-                  <ol className="list-decimal list-inside space-y-1 pl-1 text-rose-900">
-                    <li>Open <strong>Firebase Console</strong> → <strong>Authentication</strong> → <strong>Settings</strong></li>
-                    <li>Scroll down to <strong>Authorized domains</strong> and click <strong>Add domain</strong></li>
-                    <li>Add both of these domains:</li>
-                  </ol>
-                  <div className="space-y-1.5 pt-1">
-                    <div className="flex items-center justify-between bg-white px-2.5 py-1.5 rounded-lg border border-rose-300 font-mono text-[10px]">
-                      <span className="truncate">{typeof window !== 'undefined' ? window.location.hostname : 'run.app'}</span>
-                      <button
-                        type="button"
-                        onClick={() => {
-                          const host = typeof window !== 'undefined' ? window.location.hostname : 'run.app';
-                          navigator.clipboard.writeText(host);
-                          setCopiedDomain(host);
-                          setTimeout(() => setCopiedDomain(null), 2500);
-                        }}
-                        className="ml-2 text-rose-700 hover:text-rose-900 flex items-center gap-1 shrink-0 font-sans font-bold cursor-pointer"
-                      >
-                        {copiedDomain === (typeof window !== 'undefined' ? window.location.hostname : 'run.app') ? (
-                          <Check className="w-3 h-3 text-emerald-600" />
-                        ) : (
-                          <Copy className="w-3 h-3" />
-                        )}
-                        <span>{copiedDomain === (typeof window !== 'undefined' ? window.location.hostname : 'run.app') ? 'Copied' : 'Copy'}</span>
-                      </button>
-                    </div>
-
-                    <div className="flex items-center justify-between bg-white px-2.5 py-1.5 rounded-lg border border-rose-300 font-mono text-[10px]">
-                      <span className="truncate">the-centre-of-islam.vercel.app</span>
-                      <button
-                        type="button"
-                        onClick={() => {
-                          navigator.clipboard.writeText('the-centre-of-islam.vercel.app');
-                          setCopiedDomain('the-centre-of-islam.vercel.app');
-                          setTimeout(() => setCopiedDomain(null), 2500);
-                        }}
-                        className="ml-2 text-rose-700 hover:text-rose-900 flex items-center gap-1 shrink-0 font-sans font-bold cursor-pointer"
-                      >
-                        {copiedDomain === 'the-centre-of-islam.vercel.app' ? (
-                          <Check className="w-3 h-3 text-emerald-600" />
-                        ) : (
-                          <Copy className="w-3 h-3" />
-                        )}
-                        <span>{copiedDomain === 'the-centre-of-islam.vercel.app' ? 'Copied' : 'Copy'}</span>
-                      </button>
-                    </div>
-
-                    <div className="flex items-center justify-between bg-white px-2.5 py-1.5 rounded-lg border border-rose-300 font-mono text-[10px]">
-                      <span className="truncate">centre-of-islam.vercel.app</span>
-                      <button
-                        type="button"
-                        onClick={() => {
-                          navigator.clipboard.writeText('centre-of-islam.vercel.app');
-                          setCopiedDomain('centre-of-islam.vercel.app');
-                          setTimeout(() => setCopiedDomain(null), 2500);
-                        }}
-                        className="ml-2 text-rose-700 hover:text-rose-900 flex items-center gap-1 shrink-0 font-sans font-bold cursor-pointer"
-                      >
-                        {copiedDomain === 'centre-of-islam.vercel.app' ? (
-                          <Check className="w-3 h-3 text-emerald-600" />
-                        ) : (
-                          <Copy className="w-3 h-3" />
-                        )}
-                        <span>{copiedDomain === 'centre-of-islam.vercel.app' ? 'Copied' : 'Copy'}</span>
-                      </button>
-                    </div>
-                  </div>
-                  <p className="font-semibold text-emerald-900 bg-emerald-50 p-2 rounded-lg border border-emerald-200">
-                    Alternatively, sign in with your Administrator Email & Password directly below!
-                  </p>
-                </div>
-              )}
-            </div>
-          )}
-
-          {authSuccess && (
-            <div className="p-3.5 bg-emerald-50 border border-emerald-200 text-emerald-900 rounded-xl flex items-start gap-2.5 text-xs">
-              <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0 mt-0.5" />
-              <span className="font-medium">{authSuccess}</span>
-            </div>
-          )}
-
-          {/* Option A: Quick Verify if current signed-in user is already one of the admin emails */}
-          {isCurrentlyAdminEmail ? (
-            <div className="p-4 bg-emerald-50 border border-emerald-200 rounded-2xl space-y-3">
-              <div className="text-xs text-emerald-900">
-                <span>Signed in as authorized administrator: </span>
-                <strong className="block text-emerald-950 font-bold mt-0.5">{user?.email}</strong>
-              </div>
-              <button
-                onClick={handleConfirmCurrentAdminSession}
-                className="w-full py-2.5 px-4 bg-emerald-800 hover:bg-emerald-900 text-white rounded-xl text-xs font-bold transition-all shadow-xs flex items-center justify-center gap-2 cursor-pointer"
-              >
-                <Check className="w-4 h-4 text-amber-300" />
-                <span>Verify & Enter Admin Workspace</span>
-              </button>
-            </div>
-          ) : user?.email ? (
-            <div className="p-3 bg-amber-50 border border-amber-200 rounded-xl text-xs text-amber-900">
-              <span>Currently signed in as: <strong>{user.email}</strong> (Non-admin account). Please authenticate with an authorized administrator email below.</span>
-            </div>
-          ) : null}
-
-          {/* Method 1: Instant Admin Passkey */}
-          <div className="p-4 bg-amber-50/80 border border-amber-300 rounded-2xl space-y-3 text-left">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-2">
-                <KeyRound className="w-4 h-4 text-amber-800" />
-                <h3 className="text-xs font-bold text-amber-950 uppercase tracking-wider">
-                  Admin Passkey Access
-                </h3>
-              </div>
-              <span className="text-[10px] font-mono bg-amber-200 text-amber-900 px-2 py-0.5 rounded-full font-bold">
-                Direct Unlock
-              </span>
-            </div>
-            <p className="text-[11px] text-amber-900">
-              Enter your designated administrator master passkey to unlock the admin workspace without third-party auth restrictions.
-            </p>
-            <form onSubmit={handleUnlockWithPasskey} className="space-y-2.5">
-              <div className="relative">
-                <input
-                  type="password"
-                  value={adminPasskeyInput}
-                  onChange={(e) => {
-                    setAdminPasskeyInput(e.target.value);
-                    if (passkeyError) setPasskeyError(null);
-                  }}
-                  placeholder="Enter administrator passkey..."
-                  className="w-full px-3.5 py-2 text-xs bg-white rounded-xl border border-amber-300 focus:outline-none focus:ring-2 focus:ring-amber-500 font-mono text-stone-900"
-                />
-              </div>
-              {passkeyError && (
-                <div className="p-2 bg-rose-50 border border-rose-200 rounded-lg text-[11px] text-rose-800 flex items-center gap-1.5 font-medium">
-                  <AlertCircle className="w-3.5 h-3.5 text-rose-600 shrink-0" />
-                  <span>{passkeyError}</span>
-                </div>
-              )}
-              <button
-                type="submit"
-                className="w-full py-2.5 bg-amber-500 hover:bg-amber-600 text-stone-950 font-bold rounded-xl text-xs transition-colors shadow-xs flex items-center justify-center gap-1.5 cursor-pointer"
-              >
-                <ShieldCheck className="w-4 h-4 text-emerald-950" />
-                <span>Unlock Admin Portal</span>
-              </button>
-            </form>
-          </div>
-
-          <div className="relative flex py-1 items-center">
-            <div className="flex-grow border-t border-stone-200"></div>
-            <span className="flex-shrink mx-3 text-stone-400 text-xs font-semibold uppercase tracking-wider">or sign in with google / password</span>
-            <div className="flex-grow border-t border-stone-200"></div>
-          </div>
-
-          {/* Method 2: Google Sign In */}
-          <div className="space-y-3">
-            <button
-              onClick={handleGoogleAdminLogin}
-              className="w-full py-2.5 px-4 bg-white hover:bg-stone-50 border border-stone-300 text-stone-800 rounded-xl text-xs font-bold transition-all shadow-xs flex items-center justify-center gap-2 cursor-pointer"
-            >
-              <svg className="w-4 h-4" viewBox="0 0 24 24">
-                <path
-                  fill="#4285F4"
-                  d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"
-                />
-                <path
-                  fill="#34A853"
-                  d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"
-                />
-                <path
-                  fill="#FBBC05"
-                  d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.06H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.94l2.85-2.22.81-.63z"
-                />
-                <path
-                  fill="#EA4335"
-                  d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.06l3.66 2.84c.87-2.6 3.3-4.52 6.16-4.52z"
-                />
-              </svg>
-              <span>Sign in with Google Admin Account</span>
-            </button>
-          </div>
-
-          <div className="relative flex py-1 items-center">
-            <div className="flex-grow border-t border-stone-200"></div>
-            <span className="flex-shrink mx-3 text-stone-400 text-xs font-semibold uppercase tracking-wider">or sign in with password</span>
-            <div className="flex-grow border-t border-stone-200"></div>
-          </div>
-
-          {/* Method 2: Email & Password Authentication */}
-          <form onSubmit={handleEmailPasswordAdminLogin} className="space-y-4 text-left">
+          {/* Password Form */}
+          <form onSubmit={handleAdminPasswordSubmit} className="space-y-4">
             <div>
               <label className="block text-xs font-bold text-stone-700 mb-1.5">
-                Select Authorized Admin Account:
+                Administrator Password
               </label>
-              <div className="space-y-1.5">
-                {ADMIN_EMAILS.map((email) => (
-                  <label
-                    key={email}
-                    className={`flex items-center gap-2 p-2.5 rounded-xl border text-xs cursor-pointer transition-colors ${
-                      !useCustomEmail && selectedAdminEmail === email
-                        ? 'border-emerald-600 bg-emerald-50 text-emerald-950 font-bold'
-                        : 'border-stone-200 hover:bg-stone-50 text-stone-700'
-                    }`}
-                  >
-                    <input
-                      type="radio"
-                      name="admin-email-choice"
-                      checked={!useCustomEmail && selectedAdminEmail === email}
-                      onChange={() => {
-                        setSelectedAdminEmail(email);
-                        setUseCustomEmail(false);
-                        setAuthError(null);
-                      }}
-                      className="text-emerald-700 focus:ring-emerald-700"
-                    />
-                    <span>{email}</span>
-                  </label>
-                ))}
-              </div>
-            </div>
-
-            <div>
-              <div className="flex items-center justify-between mb-1">
-                <label className="block text-xs font-bold text-stone-700">
-                  Password for {getTargetAdminEmail()}:
-                </label>
-                <button
-                  type="button"
-                  onClick={handleAdminPasswordReset}
-                  disabled={isSubmitting}
-                  className="text-[11px] text-emerald-800 hover:underline font-semibold cursor-pointer"
-                >
-                  Forgot Password / Reset Link?
-                </button>
-              </div>
               <div className="relative">
                 <input
                   type={showAdminPassword ? 'text' : 'password'}
                   required
-                  placeholder="Enter administrator password"
-                  value={adminPassword}
-                  onChange={(e) => setAdminPassword(e.target.value)}
-                  className="w-full px-3.5 py-2.5 pr-10 bg-stone-50 border border-stone-300 rounded-xl text-xs focus:outline-none focus:ring-2 focus:ring-emerald-700 text-stone-900"
+                  autoFocus
+                  autoComplete="current-password"
+                  placeholder="Enter administrator password..."
+                  value={adminPasswordInput}
+                  onChange={(e) => {
+                    setAdminPasswordInput(e.target.value);
+                    if (passwordError) setPasswordError(null);
+                  }}
+                  className="w-full px-3.5 py-2.5 pr-11 bg-stone-50 border border-stone-300 rounded-xl text-xs focus:outline-none focus:ring-2 focus:ring-emerald-700 text-stone-900 font-mono tracking-wide"
                 />
                 <button
                   type="button"
                   onClick={() => setShowAdminPassword(!showAdminPassword)}
-                  className="absolute right-3 top-2.5 text-stone-400 hover:text-stone-600 cursor-pointer"
+                  className="absolute right-3 top-2.5 text-stone-400 hover:text-stone-700 cursor-pointer p-0.5"
                   tabIndex={-1}
+                  aria-label={showAdminPassword ? 'Hide password' : 'Show password'}
                 >
                   {showAdminPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
                 </button>
               </div>
             </div>
 
+            {/* Error Message */}
+            {passwordError && (
+              <div className="p-3 bg-rose-50 border border-rose-200 text-rose-800 rounded-xl text-xs flex items-center gap-2">
+                <AlertCircle className="w-4 h-4 text-rose-600 shrink-0" />
+                <span className="font-semibold">{passwordError}</span>
+              </div>
+            )}
+
             <button
               type="submit"
-              disabled={isSubmitting}
-              className="w-full py-2.5 px-4 bg-emerald-800 hover:bg-emerald-900 disabled:opacity-50 text-white rounded-xl text-xs font-bold transition-colors cursor-pointer flex items-center justify-center gap-2 shadow-xs"
+              disabled={isVerifyingPassword}
+              className="w-full py-2.5 px-4 bg-emerald-800 hover:bg-emerald-900 disabled:opacity-60 text-white rounded-xl text-xs font-bold transition-all shadow-xs flex items-center justify-center gap-2 cursor-pointer"
             >
-              <Lock className="w-4 h-4 text-amber-300" />
-              <span>{isSubmitting ? 'Authenticating...' : 'Sign In & Unlock Portal'}</span>
+              {isVerifyingPassword ? (
+                <>
+                  <RefreshCw className="w-4 h-4 animate-spin text-amber-300" />
+                  <span>Verifying Credentials...</span>
+                </>
+              ) : (
+                <>
+                  <Lock className="w-4 h-4 text-amber-300" />
+                  <span>Unlock Admin Portal</span>
+                </>
+              )}
             </button>
           </form>
 
-          <div className="pt-2 border-t border-stone-100 text-center">
+          <div className="pt-3 border-t border-stone-100 text-center">
             <button
+              type="button"
               onClick={() => onNavigate('home')}
-              className="text-xs text-stone-500 hover:text-stone-800 font-medium cursor-pointer"
+              className="text-xs text-stone-500 hover:text-stone-800 font-medium transition-colors cursor-pointer"
             >
               ← Return to Home Page
             </button>
@@ -954,7 +639,7 @@ export const AdminPage: React.FC<AdminPageProps> = ({ onNavigate }) => {
         <div>
           <div className="flex items-center gap-2 text-emerald-800 text-xs font-bold uppercase tracking-wider mb-1">
             <ShieldCheck className="w-4 h-4 text-emerald-700" />
-            <span>Authenticated Administrator Workspace ({user?.email || 'Authorized'})</span>
+            <span>Authenticated Administrator Workspace</span>
           </div>
           <h1 className="text-2xl sm:text-3xl font-bold text-stone-900 tracking-tight">
             Admin Content & Publishing Portal

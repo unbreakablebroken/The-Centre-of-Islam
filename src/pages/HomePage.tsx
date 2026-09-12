@@ -106,92 +106,92 @@ export const HomePage: React.FC<HomePageProps> = ({ onNavigate }) => {
   return (
     <div className="space-y-12 pb-16">
       {/* Hero Section */}
-      <section className="relative overflow-hidden bg-gradient-to-b from-emerald-900 via-emerald-950 to-stone-900 text-white rounded-3xl p-6 sm:p-10 md:p-12 border border-emerald-800 shadow-xl">
+      <section className="relative overflow-hidden bg-gradient-to-b from-emerald-900 via-emerald-950 to-stone-900 text-white rounded-3xl p-5 sm:p-9 md:p-12 border border-emerald-800 shadow-xl">
         <div className="absolute top-0 right-0 w-96 h-96 bg-emerald-700/20 rounded-full blur-3xl pointer-events-none -mr-20 -mt-20"></div>
         <div className="absolute bottom-0 left-0 w-80 h-80 bg-amber-500/10 rounded-full blur-2xl pointer-events-none -ml-16 -mb-16"></div>
 
-        <div className="relative z-10 max-w-3xl space-y-6">
-          <div className="flex items-center gap-3.5">
+        <div className="relative z-10 max-w-3xl space-y-5 sm:space-y-6">
+          <div className="flex items-center gap-3">
             <img
               src="/logo.png"
               alt="Centre of Islam Emblem"
-              className="w-14 h-14 sm:w-16 sm:h-16 object-contain drop-shadow-md shrink-0"
+              className="w-12 h-12 sm:w-16 sm:h-16 object-contain drop-shadow-md shrink-0"
               referrerPolicy="no-referrer"
             />
-            <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-emerald-800/80 border border-emerald-700/80 text-amber-300 text-xs font-semibold tracking-wide">
-              <Sparkles className="w-3.5 h-3.5 text-amber-400" />
+            <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-emerald-800/80 border border-emerald-700/80 text-amber-300 text-[11px] sm:text-xs font-semibold tracking-wide">
+              <Sparkles className="w-3.5 h-3.5 text-amber-400 shrink-0" />
               <span>Welcome to Centre of Islam</span>
             </div>
           </div>
 
-          <div className="space-y-3">
+          <div className="space-y-2.5 sm:space-y-3">
             <h1 className="text-2xl sm:text-4xl md:text-5xl font-extrabold tracking-tight leading-snug sm:leading-tight text-white">
               Authentic Knowledge, Worship & Scholarly Discourse
             </h1>
-            <p className="text-emerald-100/90 text-sm sm:text-base md:text-lg leading-relaxed">
+            <p className="text-emerald-100/90 text-xs sm:text-base md:text-lg leading-relaxed">
               Your digital Islamic sanctuary: Explore the Holy Quran, authentic Hadith collections, comprehensive study notes and documents, monthly Salah tracking, and collaborative community debates backed by genuine citations.
             </p>
           </div>
 
-          {/* Quick Action Buttons */}
-          <div className="flex flex-wrap items-center gap-3 pt-2">
+          {/* Quick Action Buttons - Optimized for Phone (1-col/thumb-friendly), Tablet (2-col), Desktop (flex) */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:flex lg:flex-wrap items-center gap-2.5 sm:gap-3 pt-2">
             <button
               id="hero-read-quran-btn"
               onClick={() => onNavigate('quran')}
-              className="px-5 py-2.5 bg-amber-400 hover:bg-amber-500 text-emerald-950 font-bold rounded-xl flex items-center gap-2 transition-all shadow-md hover:shadow-lg cursor-pointer text-xs sm:text-sm"
+              className="w-full lg:w-auto min-h-[44px] px-5 py-2.5 bg-amber-400 hover:bg-amber-500 text-emerald-950 font-bold rounded-xl flex items-center justify-center gap-2 transition-all shadow-md hover:shadow-lg cursor-pointer text-xs sm:text-sm"
             >
-              <BookOpen className="w-4 h-4" />
+              <BookOpen className="w-4 h-4 shrink-0" />
               <span>Read Online Quran</span>
             </button>
             <button
               id="hero-board-notes-btn"
               onClick={() => onNavigate('study-notes')}
-              className="px-5 py-2.5 bg-emerald-800/80 hover:bg-emerald-800 text-white font-medium rounded-xl border border-emerald-700 flex items-center gap-2 transition-colors cursor-pointer text-xs sm:text-sm"
+              className="w-full lg:w-auto min-h-[44px] px-5 py-2.5 bg-emerald-800/80 hover:bg-emerald-800 text-white font-medium rounded-xl border border-emerald-700 flex items-center justify-center gap-2 transition-colors cursor-pointer text-xs sm:text-sm"
             >
-              <FileText className="w-4 h-4 text-amber-300" />
+              <FileText className="w-4 h-4 text-amber-300 shrink-0" />
               <span>Notes & Materials</span>
             </button>
             <button
               id="hero-convert-guide-btn"
               onClick={() => onNavigate('convert-guide')}
-              className="px-5 py-2.5 bg-emerald-800/80 hover:bg-emerald-700 text-amber-200 font-medium rounded-xl border border-emerald-600 flex items-center gap-2 transition-colors cursor-pointer text-xs sm:text-sm"
+              className="w-full lg:w-auto min-h-[44px] px-5 py-2.5 bg-emerald-800/80 hover:bg-emerald-700 text-amber-200 font-medium rounded-xl border border-emerald-600 flex items-center justify-center gap-2 transition-colors cursor-pointer text-xs sm:text-sm"
             >
-              <HeartHandshake className="w-4 h-4 text-amber-300" />
+              <HeartHandshake className="w-4 h-4 text-amber-300 shrink-0" />
               <span>Convert Guide</span>
             </button>
             <button
               id="hero-community-qa-btn"
               onClick={() => onNavigate('community-qa')}
-              className="px-5 py-2.5 bg-white/10 hover:bg-white/20 text-white font-medium rounded-xl border border-white/20 flex items-center gap-2 transition-colors cursor-pointer text-xs sm:text-sm"
+              className="w-full lg:w-auto min-h-[44px] px-5 py-2.5 bg-white/10 hover:bg-white/20 text-white font-medium rounded-xl border border-white/20 flex items-center justify-center gap-2 transition-colors cursor-pointer text-xs sm:text-sm"
             >
-              <MessageSquareQuote className="w-4 h-4" />
+              <MessageSquareQuote className="w-4 h-4 shrink-0" />
               <span>Ask & Debate Questions</span>
             </button>
           </div>
         </div>
 
         {/* Decorative Arabic Calligraphy snippet */}
-        <div className="mt-8 pt-6 border-t border-emerald-800/60 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 text-emerald-200/90 text-sm">
-          <div className="font-arabic text-xl sm:text-2xl text-amber-300/90 font-medium">
+        <div className="mt-7 sm:mt-8 pt-5 sm:pt-6 border-t border-emerald-800/60 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 sm:gap-4 text-emerald-200/90 text-sm">
+          <div className="font-arabic text-lg sm:text-2xl text-amber-300/90 font-medium leading-relaxed break-words" dir="rtl">
             رَبَّنَا آتِنَا فِي الدُّنْيَا حَسَنَةً وَفِي الْآخِرَةِ حَسَنَةً وَقِنَا عَذَابَ النَّارِ
           </div>
-          <div className="text-xs text-emerald-300/80">
+          <div className="text-xs text-emerald-300/80 sm:text-right">
             "Our Lord, give us in this world that which is good and in the Hereafter that which is good..." (2:201)
           </div>
         </div>
       </section>
 
       {/* Humble Welcome for New Converts & Seekers */}
-      <section className="bg-gradient-to-r from-amber-50 via-emerald-50 to-teal-50 border border-amber-200/80 rounded-3xl p-6 sm:p-8 flex flex-col md:flex-row items-center justify-between gap-6 shadow-xs">
-        <div className="flex items-start gap-4">
-          <div className="w-12 h-12 rounded-2xl bg-amber-200/80 text-amber-900 flex items-center justify-center shrink-0 shadow-2xs">
-            <HeartHandshake className="w-6 h-6 text-emerald-900" />
+      <section className="bg-gradient-to-r from-amber-50 via-emerald-50 to-teal-50 border border-amber-200/80 rounded-3xl p-5 sm:p-7 md:p-8 flex flex-col md:flex-row items-start md:items-center justify-between gap-5 sm:gap-6 shadow-xs">
+        <div className="flex items-start gap-3.5 sm:gap-4">
+          <div className="w-11 h-11 sm:w-12 sm:h-12 rounded-2xl bg-amber-200/80 text-amber-900 flex items-center justify-center shrink-0 shadow-2xs">
+            <HeartHandshake className="w-5 h-5 sm:w-6 sm:h-6 text-emerald-900" />
           </div>
           <div className="space-y-1">
-            <span className="text-[11px] font-bold uppercase tracking-wider text-emerald-800">
+            <span className="text-[10px] sm:text-[11px] font-bold uppercase tracking-wider text-emerald-800">
               New to Islam or Seeking Knowledge?
             </span>
-            <h2 className="text-lg sm:text-xl font-bold text-stone-900">
+            <h2 className="text-base sm:text-xl font-bold text-stone-900">
               A Warm, Humble Welcome to Our Convert Guide
             </h2>
             <p className="text-xs sm:text-sm text-stone-600 max-w-2xl leading-relaxed">
@@ -201,7 +201,7 @@ export const HomePage: React.FC<HomePageProps> = ({ onNavigate }) => {
         </div>
         <button
           onClick={() => onNavigate('convert-guide')}
-          className="px-5 py-2.5 bg-emerald-800 hover:bg-emerald-900 text-white font-bold text-xs sm:text-sm rounded-xl shadow-xs transition-colors shrink-0 flex items-center gap-2 cursor-pointer"
+          className="w-full md:w-auto min-h-[44px] px-5 py-2.5 bg-emerald-800 hover:bg-emerald-900 text-white font-bold text-xs sm:text-sm rounded-xl shadow-xs transition-colors shrink-0 flex items-center justify-center gap-2 cursor-pointer"
         >
           <span>Explore Convert Guide</span>
           <ArrowRight className="w-4 h-4" />
@@ -331,23 +331,23 @@ export const HomePage: React.FC<HomePageProps> = ({ onNavigate }) => {
       </section>
 
       {/* Educational Board Highlight */}
-      <section className="bg-stone-900 text-white rounded-3xl p-8 border border-stone-800 flex flex-col lg:flex-row items-center justify-between gap-6">
+      <section className="bg-stone-900 text-white rounded-3xl p-5 sm:p-8 border border-stone-800 flex flex-col lg:flex-row items-start lg:items-center justify-between gap-6 shadow-sm">
         <div className="space-y-3 max-w-xl">
           <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-emerald-950 text-emerald-400 text-xs font-semibold border border-emerald-800">
             <GraduationCap className="w-3.5 h-3.5" />
             <span>Academic Curriculum Study Notes</span>
           </div>
-          <h3 className="text-2xl font-bold tracking-tight">
+          <h3 className="text-xl sm:text-2xl font-bold tracking-tight">
             Preparing for Islamic Studies Exams?
           </h3>
-          <p className="text-stone-300 text-sm leading-relaxed">
+          <p className="text-stone-300 text-xs sm:text-sm leading-relaxed">
             Access revision summaries, key definitions, model questions, and scoring schemes structured precisely for <strong className="text-white">IGCSE (Cambridge 0493/2058)</strong>, <strong className="text-white">CBSE</strong>, <strong className="text-white">NCERT</strong>, and <strong className="text-white">SSC</strong> state education boards.
           </p>
         </div>
         <button
           id="cta-board-notes-btn"
           onClick={() => onNavigate('study-notes')}
-          className="px-6 py-3 bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-sm rounded-xl flex items-center gap-2 transition-colors whitespace-nowrap shadow-md"
+          className="w-full lg:w-auto min-h-[44px] px-6 py-3 bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs sm:text-sm rounded-xl flex items-center justify-center gap-2 transition-colors whitespace-nowrap shadow-md cursor-pointer shrink-0"
         >
           <span>View All Study Notes</span>
           <ArrowRight className="w-4 h-4" />
