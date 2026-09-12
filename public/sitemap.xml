@@ -6,7 +6,7 @@
   
   <!-- Home Page -->
   <url>
-    <loc>https://ais-pre-nmiisklwhcjlxomszznuno-382196026317.asia-east1.run.app/</loc>
+    <loc>https://the-centre-of-islam.vercel.app/</loc>
     <lastmod>2026-09-12</lastmod>
     <changefreq>daily</changefreq>
     <priority>1.0</priority>
@@ -14,7 +14,7 @@
 
   <!-- The Noble Quran (Online Quran Reader & Audio Recitation) -->
   <url>
-    <loc>https://ais-pre-nmiisklwhcjlxomszznuno-382196026317.asia-east1.run.app/quran</loc>
+    <loc>https://the-centre-of-islam.vercel.app/quran</loc>
     <lastmod>2026-09-12</lastmod>
     <changefreq>daily</changefreq>
     <priority>0.95</priority>
@@ -22,7 +22,7 @@
 
   <!-- Islamic & Hijri Calendar -->
   <url>
-    <loc>https://ais-pre-nmiisklwhcjlxomszznuno-382196026317.asia-east1.run.app/calendar</loc>
+    <loc>https://the-centre-of-islam.vercel.app/calendar</loc>
     <lastmod>2026-09-12</lastmod>
     <changefreq>daily</changefreq>
     <priority>0.90</priority>
@@ -30,7 +30,7 @@
 
   <!-- Hadith Collections -->
   <url>
-    <loc>https://ais-pre-nmiisklwhcjlxomszznuno-382196026317.asia-east1.run.app/hadith</loc>
+    <loc>https://the-centre-of-islam.vercel.app/hadith</loc>
     <lastmod>2026-09-12</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.90</priority>
@@ -38,7 +38,7 @@
 
   <!-- Convert Guide for New Muslims -->
   <url>
-    <loc>https://ais-pre-nmiisklwhcjlxomszznuno-382196026317.asia-east1.run.app/convert-guide</loc>
+    <loc>https://the-centre-of-islam.vercel.app/convert-guide</loc>
     <lastmod>2026-09-12</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.85</priority>
@@ -46,7 +46,7 @@
 
   <!-- Community Debates & Q&A with Authentic References -->
   <url>
-    <loc>https://ais-pre-nmiisklwhcjlxomszznuno-382196026317.asia-east1.run.app/community-qa</loc>
+    <loc>https://the-centre-of-islam.vercel.app/community-qa</loc>
     <lastmod>2026-09-12</lastmod>
     <changefreq>daily</changefreq>
     <priority>0.85</priority>
@@ -54,7 +54,7 @@
 
   <!-- Islamic Study Notes & Educational Materials -->
   <url>
-    <loc>https://ais-pre-nmiisklwhcjlxomszznuno-382196026317.asia-east1.run.app/study-notes</loc>
+    <loc>https://the-centre-of-islam.vercel.app/study-notes</loc>
     <lastmod>2026-09-12</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.80</priority>
@@ -62,7 +62,7 @@
 
   <!-- Daily Islamic Quotes & Reflections -->
   <url>
-    <loc>https://ais-pre-nmiisklwhcjlxomszznuno-382196026317.asia-east1.run.app/daily-quotes</loc>
+    <loc>https://the-centre-of-islam.vercel.app/daily-quotes</loc>
     <lastmod>2026-09-12</lastmod>
     <changefreq>daily</changefreq>
     <priority>0.80</priority>
@@ -70,7 +70,7 @@
 
   <!-- Printable Charts, Posters & Worksheets -->
   <url>
-    <loc>https://ais-pre-nmiisklwhcjlxomszznuno-382196026317.asia-east1.run.app/printables</loc>
+    <loc>https://the-centre-of-islam.vercel.app/printables</loc>
     <lastmod>2026-09-12</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.80</priority>
@@ -78,7 +78,7 @@
 
   <!-- Monthly Salah Habit Counter -->
   <url>
-    <loc>https://ais-pre-nmiisklwhcjlxomszznuno-382196026317.asia-east1.run.app/salah-counter</loc>
+    <loc>https://the-centre-of-islam.vercel.app/salah-counter</loc>
     <lastmod>2026-09-12</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.75</priority>
@@ -86,7 +86,7 @@
 
   <!-- Digital Tasbih & Dhikr Counter -->
   <url>
-    <loc>https://ais-pre-nmiisklwhcjlxomszznuno-382196026317.asia-east1.run.app/tasbih</loc>
+    <loc>https://the-centre-of-islam.vercel.app/tasbih</loc>
     <lastmod>2026-09-12</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.75</priority>
@@ -94,7 +94,7 @@
 
   <!-- About Us -->
   <url>
-    <loc>https://ais-pre-nmiisklwhcjlxomszznuno-382196026317.asia-east1.run.app/about</loc>
+    <loc>https://the-centre-of-islam.vercel.app/about</loc>
     <lastmod>2026-09-12</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.70</priority>
@@ -102,7 +102,7 @@
 
   <!-- Privacy Policy -->
   <url>
-    <loc>https://ais-pre-nmiisklwhcjlxomszznuno-382196026317.asia-east1.run.app/privacy</loc>
+    <loc>https://the-centre-of-islam.vercel.app/privacy</loc>
     <lastmod>2026-09-12</lastmod>
     <changefreq>yearly</changefreq>
     <priority>0.50</priority>
@@ -110,7 +110,7 @@
 
   <!-- Terms & Conditions -->
   <url>
-    <loc>https://ais-pre-nmiisklwhcjlxomszznuno-382196026317.asia-east1.run.app/terms</loc>
+    <loc>https://the-centre-of-islam.vercel.app/terms</loc>
     <lastmod>2026-09-12</lastmod>
     <changefreq>yearly</changefreq>
     <priority>0.50</priority>
