@@ -1,0 +1,6 @@
+# Robots.txt for Centre of Islam
+User-agent: *
+Allow: /
+
+# Sitemaps
+Sitemap: https://ais-pre-nmiisklwhcjlxomszznuno-382196026317.asia-east1.run.app/sitemap.xml

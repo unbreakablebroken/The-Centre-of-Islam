@@ -32,23 +32,31 @@ function AppContent() {
     window.scrollTo({ top: 0, behavior: 'smooth' });
   }, [activePage]);
 
-  // Handle URL hash navigation if user uses bookmarks or links
+  // Handle URL navigation (direct paths like /quran as well as hash #quran)
   useEffect(() => {
-    const handleHashChange = () => {
-      const hash = window.location.hash.replace('#', '') as PageId;
+    const handleUrlChange = () => {
       const validPages: PageId[] = [
         'home', 'quran', 'calendar', 'hadith',
         'daily-quotes', 'printables', 'community-qa', 'study-notes',
         'convert-guide', 'salah-counter', 'tasbih', 'about', 'privacy', 'terms', 'admin'
       ];
-      if (validPages.includes(hash)) {
+      const path = window.location.pathname.replace(/^\/+/, '').replace(/\/+$/, '') as PageId;
+      const hash = window.location.hash.replace(/^#/, '').replace(/^\/+/, '') as PageId;
+
+      if (validPages.includes(path)) {
+        setActivePage(path);
+      } else if (validPages.includes(hash)) {
         setActivePage(hash);
       }
     };
 
-    handleHashChange();
-    window.addEventListener('hashchange', handleHashChange);
-    return () => window.removeEventListener('hashchange', handleHashChange);
+    handleUrlChange();
+    window.addEventListener('hashchange', handleUrlChange);
+    window.addEventListener('popstate', handleUrlChange);
+    return () => {
+      window.removeEventListener('hashchange', handleUrlChange);
+      window.removeEventListener('popstate', handleUrlChange);
+    };
   }, []);
 
   const handleNavigate = (page: PageId) => {

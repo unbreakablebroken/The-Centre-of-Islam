@@ -1,0 +1,119 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9"
+        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xsi:schemaLocation="http://www.sitemaps.org/schemas/sitemap/0.9
+        http://www.sitemaps.org/schemas/sitemap/0.9/sitemap.xsd">
+  
+  <!-- Home Page -->
+  <url>
+    <loc>https://ais-pre-nmiisklwhcjlxomszznuno-382196026317.asia-east1.run.app/</loc>
+    <lastmod>2026-09-12</lastmod>
+    <changefreq>daily</changefreq>
+    <priority>1.0</priority>
+  </url>
+
+  <!-- The Noble Quran (Online Quran Reader & Audio Recitation) -->
+  <url>
+    <loc>https://ais-pre-nmiisklwhcjlxomszznuno-382196026317.asia-east1.run.app/quran</loc>
+    <lastmod>2026-09-12</lastmod>
+    <changefreq>daily</changefreq>
+    <priority>0.95</priority>
+  </url>
+
+  <!-- Islamic & Hijri Calendar -->
+  <url>
+    <loc>https://ais-pre-nmiisklwhcjlxomszznuno-382196026317.asia-east1.run.app/calendar</loc>
+    <lastmod>2026-09-12</lastmod>
+    <changefreq>daily</changefreq>
+    <priority>0.90</priority>
+  </url>
+
+  <!-- Hadith Collections -->
+  <url>
+    <loc>https://ais-pre-nmiisklwhcjlxomszznuno-382196026317.asia-east1.run.app/hadith</loc>
+    <lastmod>2026-09-12</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.90</priority>
+  </url>
+
+  <!-- Convert Guide for New Muslims -->
+  <url>
+    <loc>https://ais-pre-nmiisklwhcjlxomszznuno-382196026317.asia-east1.run.app/convert-guide</loc>
+    <lastmod>2026-09-12</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.85</priority>
+  </url>
+
+  <!-- Community Debates & Q&A with Authentic References -->
+  <url>
+    <loc>https://ais-pre-nmiisklwhcjlxomszznuno-382196026317.asia-east1.run.app/community-qa</loc>
+    <lastmod>2026-09-12</lastmod>
+    <changefreq>daily</changefreq>
+    <priority>0.85</priority>
+  </url>
+
+  <!-- Islamic Study Notes & Educational Materials -->
+  <url>
+    <loc>https://ais-pre-nmiisklwhcjlxomszznuno-382196026317.asia-east1.run.app/study-notes</loc>
+    <lastmod>2026-09-12</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.80</priority>
+  </url>
+
+  <!-- Daily Islamic Quotes & Reflections -->
+  <url>
+    <loc>https://ais-pre-nmiisklwhcjlxomszznuno-382196026317.asia-east1.run.app/daily-quotes</loc>
+    <lastmod>2026-09-12</lastmod>
+    <changefreq>daily</changefreq>
+    <priority>0.80</priority>
+  </url>
+
+  <!-- Printable Charts, Posters & Worksheets -->
+  <url>
+    <loc>https://ais-pre-nmiisklwhcjlxomszznuno-382196026317.asia-east1.run.app/printables</loc>
+    <lastmod>2026-09-12</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.80</priority>
+  </url>
+
+  <!-- Monthly Salah Habit Counter -->
+  <url>
+    <loc>https://ais-pre-nmiisklwhcjlxomszznuno-382196026317.asia-east1.run.app/salah-counter</loc>
+    <lastmod>2026-09-12</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.75</priority>
+  </url>
+
+  <!-- Digital Tasbih & Dhikr Counter -->
+  <url>
+    <loc>https://ais-pre-nmiisklwhcjlxomszznuno-382196026317.asia-east1.run.app/tasbih</loc>
+    <lastmod>2026-09-12</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.75</priority>
+  </url>
+
+  <!-- About Us -->
+  <url>
+    <loc>https://ais-pre-nmiisklwhcjlxomszznuno-382196026317.asia-east1.run.app/about</loc>
+    <lastmod>2026-09-12</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.70</priority>
+  </url>
+
+  <!-- Privacy Policy -->
+  <url>
+    <loc>https://ais-pre-nmiisklwhcjlxomszznuno-382196026317.asia-east1.run.app/privacy</loc>
+    <lastmod>2026-09-12</lastmod>
+    <changefreq>yearly</changefreq>
+    <priority>0.50</priority>
+  </url>
+
+  <!-- Terms & Conditions -->
+  <url>
+    <loc>https://ais-pre-nmiisklwhcjlxomszznuno-382196026317.asia-east1.run.app/terms</loc>
+    <lastmod>2026-09-12</lastmod>
+    <changefreq>yearly</changefreq>
+    <priority>0.50</priority>
+  </url>
+
+</urlset>
