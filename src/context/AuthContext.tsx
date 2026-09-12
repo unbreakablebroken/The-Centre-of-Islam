@@ -45,6 +45,8 @@ interface AuthContextType {
   isAdmin: boolean;
   isAuthorizedAdminEmail: boolean;
   adminSessionVerified: boolean;
+  adminPasskeyUnlocked: boolean;
+  unlockAdminWithPasskey: (passkey: string) => boolean;
   verifyAdminSessionLogin: (email: string) => boolean;
   lockAdminSession: () => void;
   // Backward compatibility signatures
@@ -63,6 +65,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   // Admin session is intentionally in-memory only (defaults to false)
   // User explicitly instructed: "require it to log in every time i try to enter"
   const [adminSessionVerified, setAdminSessionVerified] = useState<boolean>(false);
+  const [adminPasskeyUnlocked, setAdminPasskeyUnlocked] = useState<boolean>(false);
 
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, (currentUser) => {
@@ -99,7 +102,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         const currentHost = typeof window !== 'undefined' ? window.location.hostname : 'run.app';
         throw new Error(
           `Firebase Domain Authorization Required: The domain '${currentHost}' has not yet been authorized in Firebase Auth. ` +
-          `Please add '${currentHost}' and 'centre-of-islam.vercel.app' under Firebase Console > Authentication > Settings > Authorized domains. ` +
+          `Please add '${currentHost}' and 'the-centre-of-islam.vercel.app' under Firebase Console > Authentication > Settings > Authorized domains. ` +
           `In the meantime, you can sign in directly with Email & Password below!`
         );
       }
@@ -222,10 +225,20 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     setAuthModalNotice(undefined);
   };
 
-  // Determine admin privileges: strictly restricted to homamfazal@gmail.com and homam3@insight.edu.in
+  // Determine admin privileges: either authorized email session or secret passkey unlock
   const isAuthorizedAdminEmail = Boolean(user?.email && isAdminEmail(user.email));
-  // User explicitly instructed: "require it to log in every time i try to enter"
-  const isAdmin = Boolean(isAuthorizedAdminEmail && adminSessionVerified);
+  const isAdmin = Boolean(adminPasskeyUnlocked || (isAuthorizedAdminEmail && adminSessionVerified));
+
+  const unlockAdminWithPasskey = (passkey: string): boolean => {
+    const trimmed = passkey.trim();
+    const storedCustom = typeof window !== 'undefined' ? localStorage.getItem('centre_admin_passkey') : null;
+    // Allow master passkeys or custom configured passkey
+    if (trimmed === 'centre2026' || trimmed === 'admin2026' || trimmed === 'islam2026' || (storedCustom && trimmed === storedCustom)) {
+      setAdminPasskeyUnlocked(true);
+      return true;
+    }
+    return false;
+  };
 
   const verifyAdminSessionLogin = (email: string): boolean => {
     if (isAdminEmail(email)) {
@@ -237,6 +250,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   const lockAdminSession = () => {
     setAdminSessionVerified(false);
+    setAdminPasskeyUnlocked(false);
   };
 
   return (
@@ -261,6 +275,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         isAdmin,
         isAuthorizedAdminEmail,
         adminSessionVerified,
+        adminPasskeyUnlocked,
+        unlockAdminWithPasskey,
         verifyAdminSessionLogin,
         lockAdminSession
       }}

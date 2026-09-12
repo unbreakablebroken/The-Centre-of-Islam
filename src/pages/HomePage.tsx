@@ -111,9 +111,19 @@ export const HomePage: React.FC<HomePageProps> = ({ onNavigate }) => {
         <div className="absolute bottom-0 left-0 w-80 h-80 bg-amber-500/10 rounded-full blur-2xl pointer-events-none -ml-16 -mb-16"></div>
 
         <div className="relative z-10 max-w-3xl space-y-6">
-          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-emerald-800/80 border border-emerald-700/80 text-amber-300 text-xs font-semibold tracking-wide">
-            <Sparkles className="w-3.5 h-3.5 text-amber-400" />
-            <span>Welcome to Centre of Islam</span>
+          <div className="flex items-center gap-3.5">
+            <div className="w-12 h-12 sm:w-14 sm:h-14 rounded-2xl overflow-hidden shadow-md border border-emerald-500/40 shrink-0 bg-emerald-950">
+              <img
+                src="/logo.jpg"
+                alt="Centre of Islam Emblem"
+                className="w-full h-full object-cover"
+                referrerPolicy="no-referrer"
+              />
+            </div>
+            <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-emerald-800/80 border border-emerald-700/80 text-amber-300 text-xs font-semibold tracking-wide">
+              <Sparkles className="w-3.5 h-3.5 text-amber-400" />
+              <span>Welcome to Centre of Islam</span>
+            </div>
           </div>
 
           <div className="space-y-3">

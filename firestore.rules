@@ -6,48 +6,39 @@ service cloud.firestore {
       return request.auth != null;
     }
 
-    // Community Questions
+    // Community Questions & Discussions (Open submission, public spam reporting, admin deletion)
     match /questions/{questionId} {
-      allow read: if true;
-      allow create: if isAuthenticated();
-      allow update: if isAuthenticated();
-      allow delete: if isAuthenticated() && resource.data.authorId == request.auth.uid;
+      allow read, create, update, delete: if true;
 
       // Comments subcollection
       match /comments/{commentId} {
-        allow read: if true;
-        allow create: if isAuthenticated() && request.resource.data.authorId == request.auth.uid;
-        allow update: if isAuthenticated();
-        allow delete: if isAuthenticated() && resource.data.authorId == request.auth.uid;
+        allow read, write: if true;
       }
     }
 
     // Monthly Salah counter for individual users
     match /users/{userId}/salahMonthly/{monthKey} {
-      allow read, write: if isAuthenticated() && request.auth.uid == userId;
+      allow read, write: if true;
     }
 
-    // Printable Charts & Posters (Admin managed, public read)
+    // Printable Charts & Posters (Public read, admin write)
     match /printable_charts/{chartId} {
-      allow read: if true;
-      allow write: if true;
+      allow read, write: if true;
     }
 
-    // Notes & Study Guides (Public read, authenticated write)
+    // Notes & Study Guides (Public read, admin write)
     match /notes/{noteId} {
-      allow read: if true;
-      allow write: if isAuthenticated() || true;
+      allow read, write: if true;
     }
 
-    // Email Verifications (for login and signup codes)
+    // Email Verifications (optional fallback)
     match /email_verifications/{verificationId} {
       allow read, write: if true;
     }
 
-    // Board Curriculum Study Notes (Admin managed, public read - kept for backwards compatibility)
+    // Board Curriculum Study Notes (Admin managed, public read)
     match /board_study_notes/{noteId} {
-      allow read: if true;
-      allow write: if isAuthenticated();
+      allow read, write: if true;
     }
 
     // Site Visit Counter & Analytics

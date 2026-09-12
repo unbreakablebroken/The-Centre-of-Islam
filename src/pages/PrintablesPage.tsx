@@ -253,7 +253,7 @@ export const PrintablesPage: React.FC<PrintablesPageProps> = ({ onNavigate }) =>
         {/* Poster Footer Citation */}
         <div className="pt-6 border-t-2 border-stone-900 flex flex-col sm:flex-row items-center justify-between text-xs text-stone-600 gap-2">
           <span>{selectedChart.footerNote || 'Free to download, print, and distribute for non-commercial educational purposes.'}</span>
-          <span className="font-bold uppercase tracking-wider text-emerald-900">centre-of-islam.vercel.app</span>
+          <span className="font-bold uppercase tracking-wider text-emerald-900">the-centre-of-islam.vercel.app</span>
         </div>
       </div>
     </div>

@@ -21,7 +21,8 @@ import {
   FileText,
   Home,
   Sparkles,
-  HeartHandshake
+  HeartHandshake,
+  Lock
 } from 'lucide-react';
 import { getHijriDate } from '../utils/prayerTimes';
 
@@ -105,8 +106,13 @@ export const Navbar: React.FC<NavbarProps> = ({ activePage, onNavigate, onOpenAu
             onClick={() => handleNavClick('home')}
             className="flex items-center gap-2.5 sm:gap-3 text-left group focus:outline-none shrink-0"
           >
-            <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-emerald-800 to-teal-950 text-amber-300 flex items-center justify-center font-bold text-lg shadow-sm border border-emerald-700/50 group-hover:scale-105 transition-transform shrink-0">
-              <span className="font-arabic text-xl leading-none select-none">☪</span>
+            <div className="w-10 h-10 rounded-xl overflow-hidden shadow-xs border border-emerald-700/50 group-hover:scale-105 transition-transform shrink-0 bg-emerald-950 flex items-center justify-center">
+              <img
+                src="/logo.jpg"
+                alt="Centre of Islam Logo"
+                className="w-full h-full object-cover"
+                referrerPolicy="no-referrer"
+              />
             </div>
             <div className="flex flex-col justify-center">
               <span className="text-lg sm:text-xl font-extrabold tracking-tight text-stone-900 leading-tight whitespace-nowrap">
@@ -148,21 +154,26 @@ export const Navbar: React.FC<NavbarProps> = ({ activePage, onNavigate, onOpenAu
               );
             })}
 
-            {/* Admin Nav Button if admin */}
-            {isAdmin && (
-              <button
-                id="nav-link-admin"
-                onClick={() => handleNavClick('admin')}
-                className={`px-2.5 py-1.5 rounded-lg text-xs font-bold flex items-center gap-1.5 transition-all whitespace-nowrap shrink-0 ${
-                  activePage === 'admin'
-                    ? 'bg-amber-500 text-stone-950 shadow-xs ring-1 ring-amber-600'
-                    : 'bg-amber-50 text-amber-900 hover:bg-amber-100 border border-amber-200'
-                }`}
-              >
+            {/* Admin Nav Button - Always accessible for the site owner */}
+            <button
+              id="nav-link-admin"
+              onClick={() => handleNavClick('admin')}
+              className={`px-2.5 py-1.5 rounded-lg text-xs font-bold flex items-center gap-1.5 transition-all whitespace-nowrap shrink-0 cursor-pointer ${
+                activePage === 'admin'
+                  ? 'bg-amber-500 text-stone-950 shadow-xs ring-1 ring-amber-600'
+                  : isAdmin
+                  ? 'bg-amber-50 text-amber-900 hover:bg-amber-100 border border-amber-300'
+                  : 'text-stone-500 hover:text-stone-900 hover:bg-stone-100'
+              }`}
+              title="Site Administration & Spam Moderation"
+            >
+              {isAdmin ? (
                 <ShieldCheck className="w-4 h-4 text-emerald-800" />
-                <span>Admin</span>
-              </button>
-            )}
+              ) : (
+                <Lock className="w-3.5 h-3.5 text-stone-400" />
+              )}
+              <span>{isAdmin ? 'Admin Portal' : 'Admin'}</span>
+            </button>
           </nav>
 
           {/* User Auth Action & Mobile Toggle */}
@@ -194,16 +205,16 @@ export const Navbar: React.FC<NavbarProps> = ({ activePage, onNavigate, onOpenAu
                   <LogOut className="w-4 h-4" />
                 </button>
               </div>
-            ) : (
+            ) : isAdmin ? (
               <button
-                id="open-auth-btn"
-                onClick={onOpenAuth}
-                className="px-3 py-1.5 bg-emerald-800 hover:bg-emerald-900 text-white text-xs font-semibold rounded-xl flex items-center gap-1.5 transition-colors shadow-xs cursor-pointer whitespace-nowrap"
+                id="admin-active-badge"
+                onClick={() => handleNavClick('admin')}
+                className="px-2.5 py-1 bg-emerald-100 text-emerald-900 border border-emerald-300 text-xs font-bold rounded-xl flex items-center gap-1.5"
               >
-                <User className="w-3.5 h-3.5" />
-                <span>Sign In</span>
+                <ShieldCheck className="w-3.5 h-3.5 text-emerald-800" />
+                <span>Admin Unlocked</span>
               </button>
-            )}
+            ) : null}
 
             {/* Mobile Hamburger Button */}
             <button

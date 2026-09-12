@@ -9,6 +9,7 @@ import {
   onSnapshot, 
   addDoc, 
   updateDoc, 
+  deleteDoc,
   doc, 
   increment, 
   serverTimestamp 
@@ -28,7 +29,11 @@ import {
   ArrowLeft,
   X,
   Sparkles,
-  ExternalLink
+  ExternalLink,
+  Flag,
+  Trash2,
+  ShieldAlert,
+  AlertTriangle
 } from 'lucide-react';
 
 const INITIAL_QUESTIONS: Question[] = [
@@ -124,12 +129,39 @@ const INITIAL_COMMENTS: Record<string, Comment[]> = {
 };
 
 export const CommunityQAPage: React.FC = () => {
-  const { user, openAuthModalWithNotice } = useAuth();
+  const { user, isAdmin } = useAuth();
   const [questions, setQuestions] = useState<Question[]>(INITIAL_QUESTIONS);
   const [activeQuestion, setActiveQuestion] = useState<Question | null>(null);
   const [commentsMap, setCommentsMap] = useState<Record<string, Comment[]>>(INITIAL_COMMENTS);
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedCategory, setSelectedCategory] = useState('All');
+  const [showSpamQueueOnly, setShowSpamQueueOnly] = useState(false);
+
+  // Spam tracking & notifications
+  const [flaggedIds, setFlaggedIds] = useState<string[]>(() => {
+    try {
+      return JSON.parse(localStorage.getItem('centre_flagged_spams') || '[]');
+    } catch {
+      return [];
+    }
+  });
+  const [spamAlertNotice, setSpamAlertNotice] = useState<string | null>(null);
+
+  // Open Author states (no sign up required)
+  const [authorNameInput, setAuthorNameInput] = useState<string>(() => {
+    try {
+      return localStorage.getItem('centre_guest_author_name') || '';
+    } catch {
+      return '';
+    }
+  });
+  const [commentAuthorName, setCommentAuthorName] = useState<string>(() => {
+    try {
+      return localStorage.getItem('centre_guest_comment_author') || '';
+    } catch {
+      return '';
+    }
+  });
 
   // New Question Form state
   const [askModalOpen, setAskModalOpen] = useState(false);
@@ -146,7 +178,7 @@ export const CommunityQAPage: React.FC = () => {
   const [isSubmittingComment, setIsSubmittingComment] = useState(false);
   const [commentFeedback, setCommentFeedback] = useState<string | null>(null);
 
-  // Listen to Firestore questions if available
+  // Listen to Firestore questions live sync
   useEffect(() => {
     try {
       const qCol = collection(db, 'questions');
@@ -155,8 +187,13 @@ export const CommunityQAPage: React.FC = () => {
         (snapshot) => {
           if (!snapshot.empty) {
             const list: Question[] = [];
-            snapshot.forEach((doc) => {
-              list.push({ id: doc.id, ...(doc.data() as any) });
+            snapshot.forEach((docSnap) => {
+              const data = docSnap.data();
+              list.push({
+                id: docSnap.id,
+                ...(data as any),
+                spamCount: typeof data.spamCount === 'number' ? data.spamCount : 0
+              });
             });
             // Combine with initial if needed
             setQuestions((prev) => {
@@ -181,10 +218,7 @@ export const CommunityQAPage: React.FC = () => {
   }, []);
 
   const handleOpenAskModal = () => {
-    if (!user) {
-      openAuthModalWithNotice('Please sign in or enter a display name to submit a community discussion question.');
-      return;
-    }
+    // Open immediately for everyone without sign-up barrier
     setAskModalOpen(true);
   };
 
@@ -193,17 +227,23 @@ export const CommunityQAPage: React.FC = () => {
     if (!newTitle.trim() || !newDetails.trim()) return;
 
     setIsSubmittingQuestion(true);
+    const finalAuthorName = (authorNameInput.trim() || user?.displayName || 'Community Seeker');
+    try {
+      localStorage.setItem('centre_guest_author_name', finalAuthorName);
+    } catch {}
+
     const newQ: Question = {
       id: `q-${Date.now()}`,
       title: newTitle.trim(),
       details: newDetails.trim(),
       category: newCategory,
       tags: newTags.split(',').map(t => t.trim()).filter(Boolean),
-      authorId: user?.uid || 'anon',
-      authorName: user?.displayName || 'Community Seeker',
+      authorId: user?.uid || 'community-guest',
+      authorName: finalAuthorName,
       authorPhoto: user?.photoURL || undefined,
       upvotes: 1,
       commentsCount: 0,
+      spamCount: 0,
       createdAt: new Date().toISOString()
     };
 
@@ -220,6 +260,8 @@ export const CommunityQAPage: React.FC = () => {
     setNewTags('');
     setAskModalOpen(false);
     setIsSubmittingQuestion(false);
+    setSpamAlertNotice('Your question was posted to the forum successfully!');
+    setTimeout(() => setSpamAlertNotice(null), 4000);
   };
 
   const handleOpenQuestion = (q: Question) => {
@@ -229,24 +271,25 @@ export const CommunityQAPage: React.FC = () => {
 
   const handleCommentSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!user) {
-      openAuthModalWithNotice('Commenting and citing references requires you to sign up or log in to ensure authentic, accountable discussion.');
-      return;
-    }
-
     if (!commentText.trim() || !activeQuestion) return;
 
     setIsSubmittingComment(true);
+    const finalCommentAuthor = (commentAuthorName.trim() || user?.displayName || 'Community Contributor');
+    try {
+      localStorage.setItem('centre_guest_comment_author', finalCommentAuthor);
+    } catch {}
+
     const newC: Comment = {
       id: `c-${Date.now()}`,
       questionId: activeQuestion.id,
       text: commentText.trim(),
       references: commentReferences.trim() || undefined,
       stance: commentStance,
-      authorId: user.uid,
-      authorName: user.displayName || 'Community Contributor',
-      authorPhoto: user.photoURL || undefined,
+      authorId: user?.uid || 'community-guest',
+      authorName: finalCommentAuthor,
+      authorPhoto: user?.photoURL || undefined,
       upvotes: 0,
+      spamCount: 0,
       createdAt: new Date().toISOString()
     };
 
@@ -267,8 +310,95 @@ export const CommunityQAPage: React.FC = () => {
 
     setCommentText('');
     setCommentReferences('');
-    setCommentFeedback('Your reference & comment was successfully published to the discussion!');
+    setCommentFeedback('Your reference and comment was successfully published to the debate!');
     setIsSubmittingComment(false);
+  };
+
+  // Report message as spam
+  const handleFlagSpam = async (id: string, isQuestion: boolean = true) => {
+    if (flaggedIds.includes(id)) {
+      setSpamAlertNotice('You have already flagged this message as spam from this device.');
+      setTimeout(() => setSpamAlertNotice(null), 3500);
+      return;
+    }
+
+    const updated = [...flaggedIds, id];
+    setFlaggedIds(updated);
+    try {
+      localStorage.setItem('centre_flagged_spams', JSON.stringify(updated));
+    } catch {}
+
+    if (isQuestion) {
+      // Update in Firestore
+      try {
+        await updateDoc(doc(db, 'questions', id), {
+          spamCount: increment(1)
+        });
+      } catch (err) {
+        console.warn('Firestore spam count increment note:', err);
+      }
+
+      setQuestions(prev =>
+        prev.map(q => {
+          if (q.id === id) {
+            const nextCount = (q.spamCount || 0) + 1;
+            return { ...q, spamCount: nextCount };
+          }
+          return q;
+        })
+      );
+
+      if (activeQuestion && activeQuestion.id === id) {
+        setActiveQuestion(prev => prev ? { ...prev, spamCount: (prev.spamCount || 0) + 1 } : null);
+      }
+    } else {
+      // Flag a comment
+      if (activeQuestion) {
+        setCommentsMap(prev => {
+          const list = prev[activeQuestion.id] || [];
+          const nextList = list.map(c => c.id === id ? { ...c, spamCount: (c.spamCount || 0) + 1 } : c);
+          return { ...prev, [activeQuestion.id]: nextList };
+        });
+      }
+    }
+
+    setSpamAlertNotice('Marked as spam. Messages reported 5 or more times are highlighted for administrator removal.');
+    setTimeout(() => setSpamAlertNotice(null), 4500);
+  };
+
+  // Delete message permanently (available to admin or in spam moderation)
+  const handleDeleteQuestion = async (qId: string) => {
+    if (!window.confirm('Are you sure you want to permanently delete this message?')) return;
+    try {
+      await deleteDoc(doc(db, 'questions', qId));
+    } catch (e) {
+      console.warn('Firestore delete note:', e);
+    }
+
+    setQuestions(prev => prev.filter(q => q.id !== qId));
+    if (activeQuestion?.id === qId) {
+      setActiveQuestion(null);
+    }
+    setSpamAlertNotice('Message permanently deleted from the forum.');
+    setTimeout(() => setSpamAlertNotice(null), 3500);
+  };
+
+  // Reset spam count if marked incorrectly
+  const handleResetSpamFlags = async (qId: string) => {
+    try {
+      await updateDoc(doc(db, 'questions', qId), {
+        spamCount: 0
+      });
+    } catch (e) {
+      console.warn('Firestore reset spam count note:', e);
+    }
+
+    setQuestions(prev => prev.map(q => q.id === qId ? { ...q, spamCount: 0 } : q));
+    if (activeQuestion?.id === qId) {
+      setActiveQuestion(prev => prev ? { ...prev, spamCount: 0 } : null);
+    }
+    setSpamAlertNotice('Spam reports cleared. Message is marked safe.');
+    setTimeout(() => setSpamAlertNotice(null), 3500);
   };
 
   const handleUpvoteQuestion = (qId: string) => {
@@ -291,7 +421,12 @@ export const CommunityQAPage: React.FC = () => {
 
   const categories = ['All', 'Fiqh & Rulings', 'Quran & Sunnah', 'Aqeedah', 'Contemporary & Ethics', 'History & Seerah'];
 
+  const spamCountThresholdItems = questions.filter(q => (q.spamCount || 0) >= 5);
+
   const filteredQuestions = questions.filter(q => {
+    if (showSpamQueueOnly) {
+      return (q.spamCount || 0) >= 5;
+    }
     const matchesSearch = 
       q.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
       q.details.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -302,6 +437,22 @@ export const CommunityQAPage: React.FC = () => {
 
   return (
     <div className="space-y-8 pb-16">
+      {/* Toast / Notification Alert Banner */}
+      {spamAlertNotice && (
+        <div className="p-4 bg-emerald-50 border border-emerald-300 text-emerald-950 rounded-2xl flex items-center justify-between gap-3 shadow-xs animate-fadeIn text-xs sm:text-sm font-medium">
+          <div className="flex items-center gap-2.5">
+            <CheckCircle className="w-5 h-5 text-emerald-600 shrink-0" />
+            <span>{spamAlertNotice}</span>
+          </div>
+          <button
+            onClick={() => setSpamAlertNotice(null)}
+            className="text-stone-400 hover:text-stone-700 p-1"
+          >
+            <X className="w-4 h-4" />
+          </button>
+        </div>
+      )}
+
       {/* Header */}
       <div className="bg-white rounded-2xl p-6 border border-stone-200 shadow-xs flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
@@ -313,24 +464,26 @@ export const CommunityQAPage: React.FC = () => {
             Community Questions & References Forum
           </h1>
           <p className="text-sm text-stone-600 mt-1">
-            Pose questions, engage in structured debates, and provide authentic Quranic and Hadith citations.
+            Open platform for questions, discussions, and authentic Islamic citations. Community-moderated to prevent spam.
           </p>
         </div>
 
-        <button
-          id="ask-question-btn"
-          onClick={handleOpenAskModal}
-          className="px-4 py-2.5 bg-emerald-800 hover:bg-emerald-900 text-white rounded-xl text-xs font-bold flex items-center gap-2 transition-colors shadow-xs"
-        >
-          <PlusCircle className="w-4 h-4" />
-          <span>Ask a New Question</span>
-        </button>
+        <div className="flex items-center gap-2.5">
+          <button
+            id="ask-question-btn"
+            onClick={handleOpenAskModal}
+            className="px-4 py-2.5 bg-emerald-800 hover:bg-emerald-900 text-white rounded-xl text-xs font-bold flex items-center gap-2 transition-colors shadow-xs cursor-pointer"
+          >
+            <PlusCircle className="w-4 h-4" />
+            <span>Ask a New Question</span>
+          </button>
+        </div>
       </div>
 
       {/* Main Content: Question List OR Question Detail */}
       {!activeQuestion ? (
         <div className="space-y-6">
-          {/* Filters & Search Bar */}
+          {/* Filters, Search & Spam Moderation Bar */}
           <div className="bg-white rounded-2xl p-5 border border-stone-200 shadow-xs space-y-4">
             <div className="relative">
               <input
@@ -344,103 +497,268 @@ export const CommunityQAPage: React.FC = () => {
               <Search className="w-4 h-4 text-stone-400 absolute left-3.5 top-3.5" />
             </div>
 
-            <div className="flex flex-wrap gap-2">
-              {categories.map((c) => (
-                <button
-                  key={c}
-                  onClick={() => setSelectedCategory(c)}
-                  className={`px-3 py-1.5 rounded-xl text-xs font-semibold transition-all ${
-                    selectedCategory === c
-                      ? 'bg-emerald-800 text-white shadow-xs'
-                      : 'bg-stone-100 text-stone-700 hover:bg-stone-200'
-                  }`}
-                >
-                  {c}
-                </button>
-              ))}
+            <div className="flex flex-wrap items-center justify-between gap-3 pt-1">
+              <div className="flex flex-wrap gap-2">
+                {categories.map((c) => (
+                  <button
+                    key={c}
+                    onClick={() => {
+                      setSelectedCategory(c);
+                      setShowSpamQueueOnly(false);
+                    }}
+                    className={`px-3 py-1.5 rounded-xl text-xs font-semibold transition-all cursor-pointer ${
+                      !showSpamQueueOnly && selectedCategory === c
+                        ? 'bg-emerald-800 text-white shadow-xs'
+                        : 'bg-stone-100 text-stone-700 hover:bg-stone-200'
+                    }`}
+                  >
+                    {c}
+                  </button>
+                ))}
+              </div>
+
+              {/* Spam Moderation Queue Filter Button */}
+              <button
+                id="spam-queue-toggle-btn"
+                onClick={() => setShowSpamQueueOnly(!showSpamQueueOnly)}
+                className={`px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 cursor-pointer ${
+                  showSpamQueueOnly
+                    ? 'bg-rose-600 text-white shadow-xs ring-2 ring-rose-300'
+                    : spamCountThresholdItems.length > 0
+                    ? 'bg-rose-50 text-rose-800 hover:bg-rose-100 border border-rose-300'
+                    : 'bg-stone-100 text-stone-600 hover:bg-stone-200'
+                }`}
+                title="Filter messages marked as spam 5 or more times"
+              >
+                <Flag className="w-3.5 h-3.5 text-rose-500" />
+                <span>Spam Queue (5+ Reports)</span>
+                <span className={`px-1.5 py-0.2 rounded-full text-[10px] font-mono font-bold ${
+                  showSpamQueueOnly
+                    ? 'bg-white text-rose-900'
+                    : 'bg-rose-200 text-rose-900'
+                }`}>
+                  {spamCountThresholdItems.length}
+                </span>
+              </button>
             </div>
           </div>
 
+          {/* Spam Queue Active Notification Banner */}
+          {showSpamQueueOnly && (
+            <div className="p-4 bg-rose-50 border border-rose-200 rounded-2xl text-xs text-rose-900 flex items-center justify-between gap-3">
+              <div className="flex items-center gap-2 font-medium">
+                <AlertTriangle className="w-4 h-4 text-rose-600 shrink-0" />
+                <span>Showing messages flagged 5 or more times as spam. Review and delete them below.</span>
+              </div>
+              <button
+                onClick={() => setShowSpamQueueOnly(false)}
+                className="text-xs font-bold text-rose-700 hover:text-rose-900 underline cursor-pointer"
+              >
+                Show All Messages
+              </button>
+            </div>
+          )}
+
           {/* Question Cards Feed */}
           <div className="space-y-4">
-            {filteredQuestions.map((q) => (
-              <div
-                key={q.id}
-                id={`question-card-${q.id}`}
-                onClick={() => handleOpenQuestion(q)}
-                className="bg-white rounded-2xl p-6 border border-stone-200 shadow-xs hover:border-emerald-300 transition-all cursor-pointer space-y-3"
-              >
-                <div className="flex flex-wrap items-center justify-between gap-2 text-xs">
-                  <div className="flex items-center gap-2">
-                    <span className="font-semibold text-emerald-900 bg-emerald-50 px-2.5 py-0.5 rounded-lg border border-emerald-100">
-                      {q.category}
-                    </span>
-                    <span className="text-stone-500">
-                      Posted by <strong>{q.authorName}</strong>
-                    </span>
-                  </div>
-
-                  <div className="flex items-center gap-3 text-stone-500">
-                    <span className="flex items-center gap-1 font-semibold text-emerald-800">
-                      <MessageSquareQuote className="w-3.5 h-3.5" />
-                      {q.commentsCount} {q.commentsCount === 1 ? 'citation/debate' : 'citations/debates'}
-                    </span>
-                    <button
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        handleUpvoteQuestion(q.id);
-                      }}
-                      className="flex items-center gap-1 hover:text-emerald-800 p-1 rounded transition-colors"
-                      title="Helpful question"
-                    >
-                      <ThumbsUp className="w-3.5 h-3.5" />
-                      <span>{q.upvotes}</span>
-                    </button>
-                  </div>
+            {filteredQuestions.length === 0 ? (
+              <div className="bg-white rounded-2xl p-12 border border-stone-200 text-center space-y-3">
+                <div className="w-12 h-12 rounded-full bg-stone-100 text-stone-400 flex items-center justify-center mx-auto">
+                  {showSpamQueueOnly ? <ShieldCheck className="w-6 h-6 text-emerald-600" /> : <Search className="w-6 h-6" />}
                 </div>
-
-                <h3 className="text-lg font-bold text-stone-900 hover:text-emerald-900 transition-colors leading-snug">
-                  {q.title}
+                <h3 className="font-bold text-stone-800 text-base">
+                  {showSpamQueueOnly ? 'No Messages Exceed 5 Spam Reports' : 'No Discussions Found'}
                 </h3>
-
-                <p className="text-stone-600 text-sm line-clamp-2 leading-relaxed">
-                  {q.details}
+                <p className="text-xs text-stone-500 max-w-sm mx-auto">
+                  {showSpamQueueOnly
+                    ? 'The forum is clean! No messages currently have 5 or more community spam flags.'
+                    : 'Try modifying your search filter or be the first to ask a question!'}
                 </p>
-
-                <div className="pt-2 flex flex-wrap items-center justify-between gap-2">
-                  <div className="flex flex-wrap gap-1.5">
-                    {q.tags.map((t, idx) => (
-                      <span key={idx} className="text-[11px] bg-stone-100 text-stone-600 px-2 py-0.5 rounded-md flex items-center gap-1">
-                        <Tag className="w-2.5 h-2.5" /> #{t}
-                      </span>
-                    ))}
-                  </div>
-
-                  <span className="text-xs font-semibold text-emerald-800">
-                    Join Debate & View References ➜
-                  </span>
-                </div>
+                {showSpamQueueOnly && (
+                  <button
+                    onClick={() => setShowSpamQueueOnly(false)}
+                    className="mt-2 px-4 py-2 bg-emerald-800 hover:bg-emerald-900 text-white rounded-xl text-xs font-bold"
+                  >
+                    Return to All Questions
+                  </button>
+                )}
               </div>
-            ))}
+            ) : (
+              filteredQuestions.map((q) => {
+                const isSpamFlaggedHigh = (q.spamCount || 0) >= 5;
+                const isAlreadyFlaggedByMe = flaggedIds.includes(q.id);
+
+                return (
+                  <div
+                    key={q.id}
+                    id={`question-card-${q.id}`}
+                    onClick={() => handleOpenQuestion(q)}
+                    className={`bg-white rounded-2xl p-6 border transition-all cursor-pointer space-y-3 ${
+                      isSpamFlaggedHigh
+                        ? 'border-rose-300 bg-rose-50/20 shadow-xs'
+                        : 'border-stone-200 shadow-xs hover:border-emerald-300'
+                    }`}
+                  >
+                    <div className="flex flex-wrap items-center justify-between gap-2 text-xs">
+                      <div className="flex items-center gap-2">
+                        <span className="font-semibold text-emerald-900 bg-emerald-50 px-2.5 py-0.5 rounded-lg border border-emerald-100">
+                          {q.category}
+                        </span>
+                        <span className="text-stone-500">
+                          Posted by <strong>{q.authorName}</strong>
+                        </span>
+                        {isSpamFlaggedHigh && (
+                          <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold bg-rose-100 text-rose-800 border border-rose-300">
+                            <AlertTriangle className="w-3 h-3" />
+                            {q.spamCount} Spam Reports
+                          </span>
+                        )}
+                      </div>
+
+                      <div className="flex items-center gap-2 text-stone-500">
+                        <span className="flex items-center gap-1 font-semibold text-emerald-800 mr-1">
+                          <MessageSquareQuote className="w-3.5 h-3.5" />
+                          {q.commentsCount} {q.commentsCount === 1 ? 'citation' : 'citations'}
+                        </span>
+
+                        {/* Report as Spam button */}
+                        <button
+                          type="button"
+                          id={`flag-spam-btn-${q.id}`}
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleFlagSpam(q.id, true);
+                          }}
+                          className={`flex items-center gap-1 text-xs px-2.5 py-1 rounded-lg border transition-colors cursor-pointer ${
+                            isAlreadyFlaggedByMe
+                              ? 'bg-rose-50 text-rose-700 border-rose-200 font-semibold'
+                              : 'text-stone-500 hover:text-rose-600 hover:bg-rose-50 border-stone-200'
+                          }`}
+                          title="Flag this message as spam"
+                        >
+                          <Flag className={`w-3.5 h-3.5 ${isAlreadyFlaggedByMe ? 'text-rose-600 fill-rose-500' : 'text-stone-400'}`} />
+                          <span>{isAlreadyFlaggedByMe ? 'Flagged' : 'Report Spam'}</span>
+                          {(q.spamCount || 0) > 0 && (
+                            <span className="font-mono font-bold text-[10px] text-rose-700">({q.spamCount})</span>
+                          )}
+                        </button>
+
+                        {/* Upvote Helpful button */}
+                        <button
+                          type="button"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleUpvoteQuestion(q.id);
+                          }}
+                          className="flex items-center gap-1 hover:text-emerald-800 p-1.5 rounded-lg border border-stone-200 hover:bg-stone-50 transition-colors"
+                          title="Helpful question"
+                        >
+                          <ThumbsUp className="w-3.5 h-3.5" />
+                          <span>{q.upvotes}</span>
+                        </button>
+                      </div>
+                    </div>
+
+                    <h3 className="text-lg font-bold text-stone-900 hover:text-emerald-900 transition-colors leading-snug">
+                      {q.title}
+                    </h3>
+
+                    <p className="text-stone-600 text-sm line-clamp-2 leading-relaxed">
+                      {q.details}
+                    </p>
+
+                    {/* Prominent Banner if marked spam 5 or more times */}
+                    {isSpamFlaggedHigh && (
+                      <div className="p-3 bg-rose-50 border border-rose-200 rounded-xl flex flex-wrap items-center justify-between gap-2 text-xs text-rose-950">
+                        <div className="flex items-center gap-2 font-semibold">
+                          <AlertTriangle className="w-4 h-4 text-rose-600 shrink-0" />
+                          <span>This message has received {q.spamCount} spam reports from other community members.</span>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <button
+                            type="button"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleResetSpamFlags(q.id);
+                            }}
+                            className="px-2.5 py-1 bg-white hover:bg-stone-50 text-stone-700 border border-stone-300 rounded-lg text-xs font-semibold"
+                          >
+                            Dismiss Flags
+                          </button>
+                          <button
+                            type="button"
+                            id={`delete-spam-q-${q.id}`}
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleDeleteQuestion(q.id);
+                            }}
+                            className="px-3 py-1 bg-rose-600 hover:bg-rose-700 text-white rounded-lg text-xs font-bold flex items-center gap-1.5 transition-colors shadow-2xs"
+                          >
+                            <Trash2 className="w-3.5 h-3.5" />
+                            <span>Delete Message</span>
+                          </button>
+                        </div>
+                      </div>
+                    )}
+
+                    <div className="pt-2 flex flex-wrap items-center justify-between gap-2">
+                      <div className="flex flex-wrap gap-1.5">
+                        {q.tags.map((t, idx) => (
+                          <span key={idx} className="text-[11px] bg-stone-100 text-stone-600 px-2 py-0.5 rounded-md flex items-center gap-1">
+                            <Tag className="w-2.5 h-2.5" /> #{t}
+                          </span>
+                        ))}
+                      </div>
+
+                      <span className="text-xs font-semibold text-emerald-800">
+                        Join Debate & View References ➜
+                      </span>
+                    </div>
+                  </div>
+                );
+              })
+            )}
           </div>
         </div>
       ) : (
         /* Detailed Thread View */
         <div className="space-y-6">
-          <button
-            onClick={() => setActiveQuestion(null)}
-            className="text-xs font-bold text-stone-600 hover:text-emerald-900 flex items-center gap-1 bg-stone-100 px-3 py-1.5 rounded-lg w-fit transition-colors"
-          >
-            <ArrowLeft className="w-3.5 h-3.5" />
-            <span>Back to All Questions</span>
-          </button>
+          <div className="flex items-center justify-between gap-3">
+            <button
+              onClick={() => setActiveQuestion(null)}
+              className="text-xs font-bold text-stone-600 hover:text-emerald-900 flex items-center gap-1 bg-stone-100 hover:bg-stone-200 px-3.5 py-2 rounded-xl transition-colors cursor-pointer"
+            >
+              <ArrowLeft className="w-3.5 h-3.5" />
+              <span>Back to All Questions</span>
+            </button>
+
+            {/* Spam / Delete controls in detail header if high flags */}
+            {(activeQuestion.spamCount || 0) >= 5 && (
+              <button
+                type="button"
+                onClick={() => handleDeleteQuestion(activeQuestion.id)}
+                className="px-3.5 py-1.5 bg-rose-600 hover:bg-rose-700 text-white rounded-xl text-xs font-bold flex items-center gap-1.5 transition-colors shadow-xs"
+              >
+                <Trash2 className="w-3.5 h-3.5" />
+                <span>Delete Message ({activeQuestion.spamCount} Flags)</span>
+              </button>
+            )}
+          </div>
 
           {/* Full Question Container */}
           <div className="bg-white rounded-3xl p-6 sm:p-8 border border-stone-200 shadow-md space-y-4">
             <div className="flex flex-wrap items-center justify-between gap-2 text-xs">
-              <span className="font-bold text-emerald-900 bg-emerald-50 px-3 py-1 rounded-lg border border-emerald-100">
-                {activeQuestion.category}
-              </span>
+              <div className="flex items-center gap-2">
+                <span className="font-bold text-emerald-900 bg-emerald-50 px-3 py-1 rounded-lg border border-emerald-100">
+                  {activeQuestion.category}
+                </span>
+                {(activeQuestion.spamCount || 0) >= 5 && (
+                  <span className="px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-rose-100 text-rose-800 border border-rose-300 flex items-center gap-1">
+                    <AlertTriangle className="w-3.5 h-3.5" />
+                    {activeQuestion.spamCount} Community Spam Flags
+                  </span>
+                )}
+              </div>
               <div className="flex items-center gap-2 text-stone-500">
                 <span>By {activeQuestion.authorName}</span>
                 <span>•</span>
@@ -456,6 +774,38 @@ export const CommunityQAPage: React.FC = () => {
               {activeQuestion.details}
             </p>
 
+            {/* If marked 5+ times spam, show notice with deletion control */}
+            {(activeQuestion.spamCount || 0) >= 5 && (
+              <div className="p-4 bg-rose-50 border border-rose-200 rounded-2xl text-xs text-rose-950 flex flex-wrap items-center justify-between gap-3">
+                <div className="space-y-0.5">
+                  <div className="font-bold flex items-center gap-1.5 text-rose-900">
+                    <AlertTriangle className="w-4 h-4 text-rose-600" />
+                    <span>Flagged by {activeQuestion.spamCount} community members as spam</span>
+                  </div>
+                  <p className="text-[11px] text-rose-800">
+                    This message has crossed the 5-report moderation threshold. You can remove it permanently or dismiss the flags.
+                  </p>
+                </div>
+                <div className="flex items-center gap-2">
+                  <button
+                    type="button"
+                    onClick={() => handleResetSpamFlags(activeQuestion.id)}
+                    className="px-3 py-1.5 bg-white hover:bg-stone-50 text-stone-700 border border-stone-300 rounded-xl text-xs font-semibold"
+                  >
+                    Dismiss Flags
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => handleDeleteQuestion(activeQuestion.id)}
+                    className="px-4 py-1.5 bg-rose-600 hover:bg-rose-700 text-white rounded-xl text-xs font-bold flex items-center gap-1.5"
+                  >
+                    <Trash2 className="w-3.5 h-3.5" />
+                    <span>Delete Message</span>
+                  </button>
+                </div>
+              </div>
+            )}
+
             <div className="flex flex-wrap items-center justify-between gap-3 pt-2 border-t border-stone-100">
               <div className="flex flex-wrap gap-1.5">
                 {activeQuestion.tags.map((t, idx) => (
@@ -465,13 +815,33 @@ export const CommunityQAPage: React.FC = () => {
                 ))}
               </div>
 
-              <button
-                onClick={() => handleUpvoteQuestion(activeQuestion.id)}
-                className="px-3 py-1.5 bg-stone-100 hover:bg-emerald-50 hover:text-emerald-800 text-stone-700 rounded-xl text-xs font-semibold flex items-center gap-1.5 transition-colors border border-stone-200"
-              >
-                <ThumbsUp className="w-3.5 h-3.5 text-emerald-800" />
-                <span>Helpful ({activeQuestion.upvotes})</span>
-              </button>
+              <div className="flex items-center gap-2">
+                {/* Report as spam button */}
+                <button
+                  type="button"
+                  onClick={() => handleFlagSpam(activeQuestion.id, true)}
+                  className={`px-3 py-1.5 rounded-xl text-xs font-semibold flex items-center gap-1.5 transition-colors border cursor-pointer ${
+                    flaggedIds.includes(activeQuestion.id)
+                      ? 'bg-rose-50 text-rose-700 border-rose-200'
+                      : 'bg-stone-100 hover:bg-rose-50 hover:text-rose-700 text-stone-600 border-stone-200'
+                  }`}
+                  title="Flag as spam"
+                >
+                  <Flag className="w-3.5 h-3.5" />
+                  <span>{flaggedIds.includes(activeQuestion.id) ? 'Reported as Spam' : 'Report Spam'}</span>
+                  {(activeQuestion.spamCount || 0) > 0 && (
+                    <span className="font-mono font-bold text-[10px] text-rose-700">({activeQuestion.spamCount})</span>
+                  )}
+                </button>
+
+                <button
+                  onClick={() => handleUpvoteQuestion(activeQuestion.id)}
+                  className="px-3 py-1.5 bg-stone-100 hover:bg-emerald-50 hover:text-emerald-800 text-stone-700 rounded-xl text-xs font-semibold flex items-center gap-1.5 transition-colors border border-stone-200"
+                >
+                  <ThumbsUp className="w-3.5 h-3.5 text-emerald-800" />
+                  <span>Helpful ({activeQuestion.upvotes})</span>
+                </button>
+              </div>
             </div>
           </div>
 
@@ -490,71 +860,102 @@ export const CommunityQAPage: React.FC = () => {
             <div className="space-y-4">
               {(!commentsMap[activeQuestion.id] || commentsMap[activeQuestion.id].length === 0) ? (
                 <div className="bg-stone-50 border border-stone-200 rounded-2xl p-6 text-center text-stone-500 text-sm">
-                  No comments or references submitted yet. Be the first to contribute an authentic perspective!
+                  No comments or references submitted yet. Be the first to contribute an authentic perspective below!
                 </div>
               ) : (
-                commentsMap[activeQuestion.id].map((comment) => (
-                  <div
-                    key={comment.id}
-                    id={`comment-${comment.id}`}
-                    className="bg-white rounded-2xl p-6 border border-stone-200 shadow-xs space-y-3"
-                  >
-                    <div className="flex flex-wrap items-center justify-between gap-2 text-xs">
-                      <div className="flex items-center gap-2">
-                        <div className="w-6 h-6 rounded-full bg-emerald-800 text-white flex items-center justify-center font-bold text-[10px]">
-                          {comment.authorName.charAt(0).toUpperCase()}
+                commentsMap[activeQuestion.id].map((comment) => {
+                  const isCommentReported = flaggedIds.includes(comment.id);
+                  const isCommentHighSpam = (comment.spamCount || 0) >= 5;
+
+                  return (
+                    <div
+                      key={comment.id}
+                      id={`comment-${comment.id}`}
+                      className={`bg-white rounded-2xl p-6 border shadow-xs space-y-3 ${
+                        isCommentHighSpam ? 'border-rose-300 bg-rose-50/20' : 'border-stone-200'
+                      }`}
+                    >
+                      <div className="flex flex-wrap items-center justify-between gap-2 text-xs">
+                        <div className="flex items-center gap-2">
+                          <div className="w-6 h-6 rounded-full bg-emerald-800 text-white flex items-center justify-center font-bold text-[10px]">
+                            {comment.authorName.charAt(0).toUpperCase()}
+                          </div>
+                          <span className="font-bold text-stone-900">{comment.authorName}</span>
+                          <span className="text-[10px] px-2 py-0.5 rounded-full font-semibold bg-emerald-50 text-emerald-800 border border-emerald-100">
+                            {comment.stance}
+                          </span>
+                          {isCommentHighSpam && (
+                            <span className="text-[10px] px-2 py-0.5 rounded-full font-bold bg-rose-100 text-rose-800 border border-rose-300 flex items-center gap-1">
+                              <AlertTriangle className="w-3 h-3" />
+                              {comment.spamCount} Spam Flags
+                            </span>
+                          )}
                         </div>
-                        <span className="font-bold text-stone-900">{comment.authorName}</span>
-                        <span className="text-[10px] px-2 py-0.5 rounded-full font-semibold bg-emerald-50 text-emerald-800 border border-emerald-100">
-                          {comment.stance}
+                        <span className="text-stone-400">
+                          {new Date(comment.createdAt).toLocaleDateString()}
                         </span>
                       </div>
-                      <span className="text-stone-400">
-                        {new Date(comment.createdAt).toLocaleDateString()}
-                      </span>
-                    </div>
 
-                    {/* Argument text */}
-                    <p className="text-stone-800 text-sm sm:text-base leading-relaxed">
-                      {comment.text}
-                    </p>
+                      {/* Argument text */}
+                      <p className="text-stone-800 text-sm sm:text-base leading-relaxed">
+                        {comment.text}
+                      </p>
 
-                    {/* Scholarly References highlight box */}
-                    {comment.references && (
-                      <div className="bg-amber-50/70 border border-amber-200/80 rounded-xl p-3.5 text-xs text-amber-950 space-y-1">
-                        <div className="font-bold flex items-center gap-1.5 text-amber-900">
-                          <BookOpen className="w-3.5 h-3.5" />
-                          <span>Cited References (Quran / Hadith / Classical Fiqh):</span>
+                      {/* Scholarly References highlight box */}
+                      {comment.references && (
+                        <div className="bg-amber-50/70 border border-amber-200/80 rounded-xl p-3.5 text-xs text-amber-950 space-y-1">
+                          <div className="font-bold flex items-center gap-1.5 text-amber-900">
+                            <BookOpen className="w-3.5 h-3.5" />
+                            <span>Cited References (Quran / Hadith / Classical Fiqh):</span>
+                          </div>
+                          <p className="leading-relaxed font-serif">
+                            {comment.references}
+                          </p>
                         </div>
-                        <p className="leading-relaxed font-serif">
-                          {comment.references}
-                        </p>
-                      </div>
-                    )}
+                      )}
 
-                    <div className="pt-2 flex items-center justify-end">
-                      <button
-                        onClick={() => handleUpvoteComment(comment.id)}
-                        className="flex items-center gap-1.5 text-xs text-stone-500 hover:text-emerald-800 transition-colors p-1 rounded"
-                      >
-                        <ThumbsUp className="w-3.5 h-3.5" />
-                        <span>Helpful ({comment.upvotes})</span>
-                      </button>
+                      <div className="pt-2 flex items-center justify-end gap-2">
+                        {/* Report Spam on Comment */}
+                        <button
+                          type="button"
+                          onClick={() => handleFlagSpam(comment.id, false)}
+                          className={`flex items-center gap-1 text-xs px-2.5 py-1 rounded-lg border transition-colors cursor-pointer ${
+                            isCommentReported
+                              ? 'bg-rose-50 text-rose-700 border-rose-200 font-semibold'
+                              : 'text-stone-400 hover:text-rose-600 hover:bg-rose-50 border-transparent hover:border-rose-200'
+                          }`}
+                          title="Report this comment as spam"
+                        >
+                          <Flag className="w-3 h-3" />
+                          <span>{isCommentReported ? 'Reported' : 'Report Spam'}</span>
+                          {(comment.spamCount || 0) > 0 && (
+                            <span className="font-mono font-bold text-[10px] text-rose-700">({comment.spamCount})</span>
+                          )}
+                        </button>
+
+                        <button
+                          onClick={() => handleUpvoteComment(comment.id)}
+                          className="flex items-center gap-1.5 text-xs text-stone-500 hover:text-emerald-800 transition-colors p-1 rounded"
+                        >
+                          <ThumbsUp className="w-3.5 h-3.5" />
+                          <span>Helpful ({comment.upvotes})</span>
+                        </button>
+                      </div>
                     </div>
-                  </div>
-                ))
+                  );
+                })
               )}
             </div>
 
-            {/* Commenting Box (MANDATORY SIGN UP REQUIREMENT AS USER SPECIFIED) */}
-            <div className="bg-white rounded-3xl p-6 sm:p-8 border-2 border-emerald-700/30 shadow-md space-y-4">
+            {/* Commenting Box (OPEN TO EVERYONE - NO SIGN UP REQUIRED) */}
+            <div className="bg-white rounded-3xl p-6 sm:p-8 border-2 border-emerald-700/20 shadow-md space-y-4">
               <div className="flex items-center justify-between border-b border-stone-100 pb-3">
                 <h4 className="font-bold text-base text-stone-900 flex items-center gap-2">
-                  <ShieldCheck className="w-5 h-5 text-emerald-800" />
-                  <span>Contribute Your Perspective or Reference</span>
+                  <MessageSquareQuote className="w-5 h-5 text-emerald-800" />
+                  <span>Contribute Your Perspective or Scholarly Reference</span>
                 </h4>
                 <span className="text-[11px] bg-emerald-50 text-emerald-800 font-semibold px-2.5 py-0.5 rounded-full border border-emerald-100">
-                  {user ? `Posting as ${user.displayName}` : 'Sign Up Required to Post'}
+                  Open Participation
                 </span>
               </div>
 
@@ -565,97 +966,87 @@ export const CommunityQAPage: React.FC = () => {
                 </div>
               )}
 
-              {!user ? (
-                /* Unauthenticated Sign-Up Barrier */
-                <div className="bg-stone-50 rounded-2xl p-6 text-center space-y-3 border border-stone-200">
-                  <div className="w-10 h-10 rounded-full bg-emerald-100 text-emerald-800 flex items-center justify-center mx-auto">
-                    <User className="w-5 h-5" />
-                  </div>
-                  <h5 className="font-bold text-stone-900 text-base">
-                    Sign Up to Join the Discussion
-                  </h5>
-                  <p className="text-xs text-stone-600 max-w-md mx-auto leading-relaxed">
-                    To maintain the highest standard of scholarly adab, prevent spam, and verify references, commenting on debates requires signing in.
-                  </p>
-                  <button
-                    id="comment-signup-btn"
-                    type="button"
-                    onClick={() => openAuthModalWithNotice('Sign up or log in to post your reference or perspective in the debate.')}
-                    className="px-5 py-2.5 bg-emerald-800 hover:bg-emerald-900 text-white font-bold rounded-xl text-xs inline-flex items-center gap-2 transition-colors shadow-sm"
-                  >
-                    <User className="w-3.5 h-3.5" />
-                    <span>Sign In with Google / Alias</span>
-                  </button>
-                </div>
-              ) : (
-                /* Authenticated Comment Form */
-                <form onSubmit={handleCommentSubmit} className="space-y-4">
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                    <div>
-                      <label className="block text-xs font-semibold text-stone-700 mb-1">
-                        Category of Reply
-                      </label>
-                      <select
-                        value={commentStance}
-                        onChange={(e) => setCommentStance(e.target.value as any)}
-                        className="w-full px-3 py-2 bg-stone-50 border border-stone-300 rounded-xl text-xs font-medium text-stone-900"
-                      >
-                        <option value="Scholarly Reference">Scholarly Reference (Citing Quran / Hadith)</option>
-                        <option value="Perspective">Analytical Perspective</option>
-                        <option value="Clarification">Question / Clarification</option>
-                        <option value="Counter-Argument">Polite Counter-Argument</option>
-                      </select>
-                    </div>
-
-                    <div>
-                      <label className="block text-xs font-semibold text-stone-700 mb-1">
-                        Authentic Citations (Surah, Hadith #, Authoritative Scholar)
-                      </label>
-                      <input
-                        type="text"
-                        placeholder="e.g. Sahih Bukhari 52, Surah An-Nisa 4:59, Ibn Kathir"
-                        value={commentReferences}
-                        onChange={(e) => setCommentReferences(e.target.value)}
-                        className="w-full px-3 py-2 bg-stone-50 border border-stone-300 rounded-xl text-xs font-medium text-stone-900 focus:ring-2 focus:ring-emerald-700"
-                      />
-                    </div>
+              {/* Open Comment Form without barrier */}
+              <form onSubmit={handleCommentSubmit} className="space-y-4">
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                  <div>
+                    <label className="block text-xs font-semibold text-stone-700 mb-1">
+                      Your Name / Display Title
+                    </label>
+                    <input
+                      type="text"
+                      placeholder="e.g. Student of Hadith, Brother Ali"
+                      value={commentAuthorName}
+                      onChange={(e) => setCommentAuthorName(e.target.value)}
+                      className="w-full px-3 py-2 bg-stone-50 border border-stone-300 rounded-xl text-xs font-medium text-stone-900 focus:ring-2 focus:ring-emerald-700"
+                    />
                   </div>
 
                   <div>
                     <label className="block text-xs font-semibold text-stone-700 mb-1">
-                      Your Argument or Scholarly Analysis
+                      Category of Reply
                     </label>
-                    <textarea
-                      rows={4}
-                      placeholder="Write your constructive, reference-backed answer with clarity and Islamic adab..."
-                      value={commentText}
-                      onChange={(e) => setCommentText(e.target.value)}
-                      className="w-full px-3.5 py-2.5 bg-stone-50 border border-stone-300 rounded-xl text-sm text-stone-900 focus:ring-2 focus:ring-emerald-700 focus:outline-none"
-                    ></textarea>
+                    <select
+                      value={commentStance}
+                      onChange={(e) => setCommentStance(e.target.value as any)}
+                      className="w-full px-3 py-2 bg-stone-50 border border-stone-300 rounded-xl text-xs font-medium text-stone-900"
+                    >
+                      <option value="Scholarly Reference">Scholarly Reference (Quran / Hadith)</option>
+                      <option value="Perspective">Analytical Perspective</option>
+                      <option value="Clarification">Question / Clarification</option>
+                      <option value="Counter-Argument">Polite Counter-Argument</option>
+                    </select>
                   </div>
 
-                  <div className="flex items-center justify-between">
-                    <p className="text-[11px] text-stone-500 italic">
-                      "Speak to people good words..." (Surah Al-Baqarah 2:83)
-                    </p>
-                    <button
-                      id="submit-comment-btn"
-                      type="submit"
-                      disabled={isSubmittingComment || !commentText.trim()}
-                      className="px-5 py-2.5 bg-emerald-800 hover:bg-emerald-900 text-white rounded-xl text-xs font-bold flex items-center gap-2 transition-colors disabled:opacity-50 shadow-xs"
-                    >
-                      <Send className="w-3.5 h-3.5" />
-                      <span>{isSubmittingComment ? 'Submitting...' : 'Post Reference & Comment'}</span>
-                    </button>
+                  <div>
+                    <label className="block text-xs font-semibold text-stone-700 mb-1">
+                      Authentic Citations (Optional)
+                    </label>
+                    <input
+                      type="text"
+                      placeholder="e.g. Sahih Bukhari 52, Surah An-Nisa 4:59"
+                      value={commentReferences}
+                      onChange={(e) => setCommentReferences(e.target.value)}
+                      className="w-full px-3 py-2 bg-stone-50 border border-stone-300 rounded-xl text-xs font-medium text-stone-900 focus:ring-2 focus:ring-emerald-700"
+                    />
                   </div>
-                </form>
-              )}
+                </div>
+
+                <div>
+                  <label className="block text-xs font-semibold text-stone-700 mb-1">
+                    Your Argument or Scholarly Analysis
+                  </label>
+                  <textarea
+                    rows={4}
+                    placeholder="Write your constructive, reference-backed answer with clarity and Islamic adab..."
+                    value={commentText}
+                    onChange={(e) => setCommentText(e.target.value)}
+                    required
+                    className="w-full px-3.5 py-2.5 bg-stone-50 border border-stone-300 rounded-xl text-sm text-stone-900 focus:ring-2 focus:ring-emerald-700 focus:outline-none"
+                  ></textarea>
+                </div>
+
+                <div className="flex flex-wrap items-center justify-between gap-2">
+                  <p className="text-[11px] text-stone-500 italic">
+                    "Speak to people good words..." (Surah Al-Baqarah 2:83)
+                  </p>
+                  <button
+                    id="submit-comment-btn"
+                    type="submit"
+                    disabled={isSubmittingComment || !commentText.trim()}
+                    className="px-5 py-2.5 bg-emerald-800 hover:bg-emerald-900 text-white rounded-xl text-xs font-bold flex items-center gap-2 transition-colors disabled:opacity-50 shadow-xs cursor-pointer"
+                  >
+                    <Send className="w-3.5 h-3.5" />
+                    <span>{isSubmittingComment ? 'Submitting...' : 'Post Reference & Comment'}</span>
+                  </button>
+                </div>
+              </form>
             </div>
           </div>
         </div>
       )}
 
-      {/* Ask Question Modal */}
+      {/* Ask Question Modal (OPEN TO ALL - NO SIGN UP REQUIRED) */}
       {askModalOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-stone-900/60 backdrop-blur-sm p-4 animate-fadeIn">
           <div className="bg-white rounded-3xl max-w-xl w-full p-6 sm:p-8 shadow-2xl border border-stone-200 relative">
@@ -671,11 +1062,24 @@ export const CommunityQAPage: React.FC = () => {
                 Ask an Islamic Question or Debate Topic
               </h3>
               <p className="text-xs text-stone-600 mt-1">
-                Post questions for community debate, references, or scholarly review.
+                Open to all visitors. Post questions for community debate, references, or scholarly review.
               </p>
             </div>
 
             <form onSubmit={handleSubmitQuestion} className="space-y-4">
+              <div>
+                <label className="block text-xs font-semibold text-stone-700 mb-1">
+                  Your Name / Pen Name (Optional)
+                </label>
+                <input
+                  type="text"
+                  placeholder="e.g. Abdullah, Sister Maryam, Student of Fiqh"
+                  value={authorNameInput}
+                  onChange={(e) => setAuthorNameInput(e.target.value)}
+                  className="w-full px-3.5 py-2 bg-stone-50 border border-stone-300 rounded-xl text-sm focus:ring-2 focus:ring-emerald-700 text-stone-900"
+                />
+              </div>
+
               <div>
                 <label className="block text-xs font-semibold text-stone-700 mb-1">
                   Question Title / Topic
@@ -747,7 +1151,7 @@ export const CommunityQAPage: React.FC = () => {
                 <button
                   type="submit"
                   disabled={isSubmittingQuestion}
-                  className="px-5 py-2.5 bg-emerald-800 hover:bg-emerald-900 text-white rounded-xl text-xs font-bold transition-colors disabled:opacity-50"
+                  className="px-5 py-2.5 bg-emerald-800 hover:bg-emerald-900 text-white rounded-xl text-xs font-bold transition-colors disabled:opacity-50 cursor-pointer"
                 >
                   {isSubmittingQuestion ? 'Publishing...' : 'Publish Question'}
                 </button>

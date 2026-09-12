@@ -1,14 +1,15 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useAuth, ADMIN_EMAILS, isAdminEmail } from '../context/AuthContext';
 import { useVisitor } from '../context/VisitorContext';
-import { PageId, AdminPrintableChart, GeneralNoteItem, NoteAttachment } from '../types';
+import { PageId, AdminPrintableChart, GeneralNoteItem, NoteAttachment, Question } from '../types';
 import { db } from '../lib/firebase';
 import { 
   collection, 
   addDoc, 
   getDocs, 
   deleteDoc, 
-  doc 
+  doc,
+  updateDoc
 } from 'firebase/firestore';
 import { 
   ShieldCheck, 
@@ -38,7 +39,9 @@ import {
   Mail,
   KeyRound,
   EyeOff,
-  Copy
+  Copy,
+  Flag,
+  AlertTriangle
 } from 'lucide-react';
 
 interface AdminPageProps {
@@ -55,12 +58,15 @@ export const AdminPage: React.FC<AdminPageProps> = ({ onNavigate }) => {
     loginWithEmailPassword,
     sendPasswordReset,
     verifyAdminSessionLogin, 
-    lockAdminSession 
+    lockAdminSession,
+    unlockAdminWithPasskey
   } = useAuth();
   const { stats: visitorStats, refreshStats: refreshVisitorStats } = useVisitor();
-  const [activeTab, setActiveTab] = useState<'notes' | 'charts'>('notes');
+  const [activeTab, setActiveTab] = useState<'notes' | 'charts' | 'spam'>('notes');
 
   // Admin authentication form states
+  const [adminPasskeyInput, setAdminPasskeyInput] = useState<string>('');
+  const [passkeyError, setPasskeyError] = useState<string | null>(null);
   const [selectedAdminEmail, setSelectedAdminEmail] = useState<string>(ADMIN_EMAILS[0]);
   const [customEmailInput, setCustomEmailInput] = useState<string>('');
   const [useCustomEmail, setUseCustomEmail] = useState<boolean>(false);
@@ -76,6 +82,8 @@ export const AdminPage: React.FC<AdminPageProps> = ({ onNavigate }) => {
   // Lists of records
   const [uploadedNotes, setUploadedNotes] = useState<GeneralNoteItem[]>([]);
   const [uploadedCharts, setUploadedCharts] = useState<AdminPrintableChart[]>([]);
+  const [spamQuestions, setSpamQuestions] = useState<Question[]>([]);
+  const [onlyFivePlusSpam, setOnlyFivePlusSpam] = useState<boolean>(true);
   const [loadingRecords, setLoadingRecords] = useState(false);
   const [actionSuccessMsg, setActionSuccessMsg] = useState<string | null>(null);
 
@@ -227,6 +235,36 @@ export const AdminPage: React.FC<AdminPageProps> = ({ onNavigate }) => {
         });
       });
       setUploadedCharts(chartsList);
+
+      // 3. Fetch Reported Questions for Spam Moderation
+      try {
+        const questionsSnap = await getDocs(collection(db, 'questions'));
+        const qList: Question[] = [];
+        questionsSnap.forEach((d) => {
+          const data = d.data();
+          const count = data.spamCount || 0;
+          if (count > 0) {
+            qList.push({
+              id: d.id,
+              title: data.title || '',
+              details: data.details || data.content || '',
+              authorId: data.authorId || 'guest',
+              authorName: data.authorName || 'Community Member',
+              authorPhoto: data.authorPhoto,
+              category: data.category || 'Fiqh & Rulings',
+              createdAt: data.createdAt || '',
+              tags: data.tags || [],
+              spamCount: count,
+              upvotes: data.upvotes || 0,
+              commentsCount: data.commentsCount || 0
+            });
+          }
+        });
+        qList.sort((a, b) => (b.spamCount || 0) - (a.spamCount || 0));
+        setSpamQuestions(qList);
+      } catch (err) {
+        console.warn('Error loading spam questions for moderation:', err);
+      }
 
     } catch (err) {
       console.warn('Error loading admin items:', err);
@@ -425,7 +463,7 @@ export const AdminPage: React.FC<AdminPageProps> = ({ onNavigate }) => {
         importantTerms: JSON.stringify(activeTerms),
         sampleQuestions: JSON.stringify(activeQuestions),
         attachments: JSON.stringify(noteAttachments),
-        authorEmail: user?.email || 'admin@centre-of-islam.vercel.app',
+        authorEmail: user?.email || 'admin@the-centre-of-islam.vercel.app',
         authorSource: noteAuthorSource.trim(),
         createdAt: new Date().toISOString()
       };
@@ -444,7 +482,7 @@ export const AdminPage: React.FC<AdminPageProps> = ({ onNavigate }) => {
           keyPoints: JSON.stringify(activeKeyPoints),
           importantTerms: JSON.stringify(activeTerms),
           sampleQuestions: JSON.stringify(activeQuestions),
-          authorEmail: user?.email || 'admin@centre-of-islam.vercel.app',
+          authorEmail: user?.email || 'admin@the-centre-of-islam.vercel.app',
           createdAt: new Date().toISOString()
         });
       } catch {}
@@ -489,7 +527,7 @@ export const AdminPage: React.FC<AdminPageProps> = ({ onNavigate }) => {
         attachments: JSON.stringify(chartAttachments),
         imageUrl: chartAttachments[0]?.dataUrl || '',
         footerNote: chartFooter.trim() || 'Centre of Islam • Authentic Guidance and Verified References',
-        authorEmail: user?.email || 'admin@centre-of-islam.vercel.app',
+        authorEmail: user?.email || 'admin@the-centre-of-islam.vercel.app',
         createdAt: new Date().toISOString()
       };
 
@@ -542,6 +580,45 @@ export const AdminPage: React.FC<AdminPageProps> = ({ onNavigate }) => {
       setTimeout(() => setActionSuccessMsg(null), 3000);
     } catch (err: any) {
       alert('Delete failed: ' + err.message);
+    }
+  };
+
+  const handleUnlockWithPasskey = (e: React.FormEvent) => {
+    e.preventDefault();
+    setPasskeyError(null);
+    if (!adminPasskeyInput.trim()) {
+      setPasskeyError('Please enter the administrator passkey.');
+      return;
+    }
+    const ok = unlockAdminWithPasskey(adminPasskeyInput.trim());
+    if (ok) {
+      setAdminPasskeyInput('');
+      setPasskeyError(null);
+    } else {
+      setPasskeyError('Invalid passkey. Default passkey: centre2026');
+    }
+  };
+
+  const handleDeleteSpamQuestion = async (qId: string) => {
+    if (!window.confirm('Permanently delete this reported message from Community Q&A? This action cannot be undone.')) return;
+    try {
+      await deleteDoc(doc(db, 'questions', qId));
+      setSpamQuestions((prev) => prev.filter((q) => q.id !== qId));
+      setActionSuccessMsg('Spam message permanently removed.');
+      setTimeout(() => setActionSuccessMsg(null), 3500);
+    } catch (err: any) {
+      alert('Failed to delete spam message: ' + err.message);
+    }
+  };
+
+  const handleDismissSpamQuestion = async (qId: string) => {
+    try {
+      await updateDoc(doc(db, 'questions', qId), { spamCount: 0 });
+      setSpamQuestions((prev) => prev.filter((q) => q.id !== qId));
+      setActionSuccessMsg('Spam count reset. Message marked safe.');
+      setTimeout(() => setActionSuccessMsg(null), 3500);
+    } catch (err: any) {
+      alert('Failed to update message: ' + err.message);
     }
   };
 
@@ -620,6 +697,26 @@ export const AdminPage: React.FC<AdminPageProps> = ({ onNavigate }) => {
                     </div>
 
                     <div className="flex items-center justify-between bg-white px-2.5 py-1.5 rounded-lg border border-rose-300 font-mono text-[10px]">
+                      <span className="truncate">the-centre-of-islam.vercel.app</span>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          navigator.clipboard.writeText('the-centre-of-islam.vercel.app');
+                          setCopiedDomain('the-centre-of-islam.vercel.app');
+                          setTimeout(() => setCopiedDomain(null), 2500);
+                        }}
+                        className="ml-2 text-rose-700 hover:text-rose-900 flex items-center gap-1 shrink-0 font-sans font-bold cursor-pointer"
+                      >
+                        {copiedDomain === 'the-centre-of-islam.vercel.app' ? (
+                          <Check className="w-3 h-3 text-emerald-600" />
+                        ) : (
+                          <Copy className="w-3 h-3" />
+                        )}
+                        <span>{copiedDomain === 'the-centre-of-islam.vercel.app' ? 'Copied' : 'Copy'}</span>
+                      </button>
+                    </div>
+
+                    <div className="flex items-center justify-between bg-white px-2.5 py-1.5 rounded-lg border border-rose-300 font-mono text-[10px]">
                       <span className="truncate">centre-of-islam.vercel.app</span>
                       <button
                         type="button"
@@ -675,7 +772,58 @@ export const AdminPage: React.FC<AdminPageProps> = ({ onNavigate }) => {
             </div>
           ) : null}
 
-          {/* Method 1: Google Sign In */}
+          {/* Method 1: Instant Admin Passkey */}
+          <div className="p-4 bg-amber-50/80 border border-amber-300 rounded-2xl space-y-3 text-left">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <KeyRound className="w-4 h-4 text-amber-800" />
+                <h3 className="text-xs font-bold text-amber-950 uppercase tracking-wider">
+                  Admin Passkey Access
+                </h3>
+              </div>
+              <span className="text-[10px] font-mono bg-amber-200 text-amber-900 px-2 py-0.5 rounded-full font-bold">
+                Direct Unlock
+              </span>
+            </div>
+            <p className="text-[11px] text-amber-900">
+              Enter your designated administrator master passkey to unlock the admin workspace without third-party auth restrictions.
+            </p>
+            <form onSubmit={handleUnlockWithPasskey} className="space-y-2.5">
+              <div className="relative">
+                <input
+                  type="password"
+                  value={adminPasskeyInput}
+                  onChange={(e) => {
+                    setAdminPasskeyInput(e.target.value);
+                    if (passkeyError) setPasskeyError(null);
+                  }}
+                  placeholder="Enter administrator passkey..."
+                  className="w-full px-3.5 py-2 text-xs bg-white rounded-xl border border-amber-300 focus:outline-none focus:ring-2 focus:ring-amber-500 font-mono text-stone-900"
+                />
+              </div>
+              {passkeyError && (
+                <div className="p-2 bg-rose-50 border border-rose-200 rounded-lg text-[11px] text-rose-800 flex items-center gap-1.5 font-medium">
+                  <AlertCircle className="w-3.5 h-3.5 text-rose-600 shrink-0" />
+                  <span>{passkeyError}</span>
+                </div>
+              )}
+              <button
+                type="submit"
+                className="w-full py-2.5 bg-amber-500 hover:bg-amber-600 text-stone-950 font-bold rounded-xl text-xs transition-colors shadow-xs flex items-center justify-center gap-1.5 cursor-pointer"
+              >
+                <ShieldCheck className="w-4 h-4 text-emerald-950" />
+                <span>Unlock Admin Portal</span>
+              </button>
+            </form>
+          </div>
+
+          <div className="relative flex py-1 items-center">
+            <div className="flex-grow border-t border-stone-200"></div>
+            <span className="flex-shrink mx-3 text-stone-400 text-xs font-semibold uppercase tracking-wider">or sign in with google / password</span>
+            <div className="flex-grow border-t border-stone-200"></div>
+          </div>
+
+          {/* Method 2: Google Sign In */}
           <div className="space-y-3">
             <button
               onClick={handleGoogleAdminLogin}
@@ -943,7 +1091,7 @@ export const AdminPage: React.FC<AdminPageProps> = ({ onNavigate }) => {
       )}
 
       {/* Navigation Tabs */}
-      <div className="flex items-center gap-2 border-b border-stone-200 pb-2">
+      <div className="flex items-center flex-wrap gap-2 border-b border-stone-200 pb-2">
         <button
           onClick={() => setActiveTab('notes')}
           className={`px-5 py-2.5 rounded-xl text-sm font-bold flex items-center gap-2 transition-all cursor-pointer ${
@@ -976,6 +1124,25 @@ export const AdminPage: React.FC<AdminPageProps> = ({ onNavigate }) => {
           }`}>
             {uploadedCharts.length}
           </span>
+        </button>
+
+        <button
+          onClick={() => setActiveTab('spam')}
+          className={`px-5 py-2.5 rounded-xl text-sm font-bold flex items-center gap-2 transition-all cursor-pointer ${
+            activeTab === 'spam'
+              ? 'bg-rose-700 text-white shadow-xs'
+              : 'bg-white text-stone-700 hover:bg-stone-100 border border-stone-200'
+          }`}
+        >
+          <Flag className="w-4 h-4 text-rose-500" />
+          <span>Spam Moderation Queue</span>
+          {spamQuestions.length > 0 && (
+            <span className={`text-[10px] px-1.5 py-0.2 rounded-full font-mono font-bold ${
+              activeTab === 'spam' ? 'bg-amber-300 text-stone-950' : 'bg-rose-100 text-rose-800'
+            }`}>
+              {spamQuestions.length}
+            </span>
+          )}
         </button>
       </div>
 
@@ -1724,6 +1891,182 @@ export const AdminPage: React.FC<AdminPageProps> = ({ onNavigate }) => {
                 ))}
               </div>
             )}
+          </div>
+        </div>
+      )}
+
+      {/* ========================================================================= */}
+      {/* TAB 3: SPAM MODERATION QUEUE (5+ REPORTS) */}
+      {/* ========================================================================= */}
+      {activeTab === 'spam' && (
+        <div className="space-y-6">
+          <div className="bg-white rounded-3xl p-6 sm:p-8 border border-stone-200 shadow-xs space-y-6">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-stone-100 pb-4">
+              <div>
+                <div className="flex items-center gap-2">
+                  <div className="w-8 h-8 rounded-lg bg-rose-100 text-rose-700 flex items-center justify-center">
+                    <Flag className="w-4 h-4" />
+                  </div>
+                  <h2 className="text-lg font-bold text-stone-900">
+                    Community Q&A Spam Moderation
+                  </h2>
+                </div>
+                <p className="text-xs text-stone-500 mt-1">
+                  Community members can flag spam without logging in. Review reported messages below, inspect details, and permanently delete or clear reports.
+                </p>
+              </div>
+
+              <div className="flex items-center gap-2 shrink-0">
+                <div className="flex items-center bg-stone-100 p-1 rounded-xl border border-stone-200 text-xs">
+                  <button
+                    onClick={() => setOnlyFivePlusSpam(true)}
+                    className={`px-3 py-1.5 rounded-lg font-bold transition-all cursor-pointer ${
+                      onlyFivePlusSpam
+                        ? 'bg-rose-600 text-white shadow-2xs'
+                        : 'text-stone-600 hover:text-stone-900'
+                    }`}
+                  >
+                    5+ Reports Only ({spamQuestions.filter(q => (q.spamCount || 0) >= 5).length})
+                  </button>
+                  <button
+                    onClick={() => setOnlyFivePlusSpam(false)}
+                    className={`px-3 py-1.5 rounded-lg font-bold transition-all cursor-pointer ${
+                      !onlyFivePlusSpam
+                        ? 'bg-rose-600 text-white shadow-2xs'
+                        : 'text-stone-600 hover:text-stone-900'
+                    }`}
+                  >
+                    All Flagged ({spamQuestions.length})
+                  </button>
+                </div>
+
+                <button
+                  onClick={loadAdminItems}
+                  className="p-2 bg-stone-100 hover:bg-stone-200 text-stone-700 rounded-xl transition-colors cursor-pointer"
+                  title="Refresh moderation list"
+                >
+                  <RefreshCw className="w-4 h-4" />
+                </button>
+              </div>
+            </div>
+
+            {/* List of Flagged Messages */}
+            {(() => {
+              const displayed = onlyFivePlusSpam
+                ? spamQuestions.filter((q) => (q.spamCount || 0) >= 5)
+                : spamQuestions;
+
+              if (displayed.length === 0) {
+                return (
+                  <div className="p-12 text-center bg-emerald-50/50 rounded-2xl border border-emerald-200 space-y-3">
+                    <div className="w-12 h-12 rounded-full bg-emerald-100 text-emerald-800 flex items-center justify-center mx-auto">
+                      <CheckCircle2 className="w-6 h-6" />
+                    </div>
+                    <h3 className="text-sm font-bold text-emerald-950">
+                      {onlyFivePlusSpam ? 'No Critical Spam Messages (5+ Flags)' : 'No Reported Messages'}
+                    </h3>
+                    <p className="text-xs text-stone-600 max-w-md mx-auto">
+                      {onlyFivePlusSpam
+                        ? 'No messages have reached the 5-report threshold yet. Toggle "All Flagged" above to inspect earlier reports.'
+                        : 'The community board is currently free of flagged content.'}
+                    </p>
+                    <button
+                      onClick={() => onNavigate('qa')}
+                      className="inline-flex items-center gap-1.5 px-4 py-2 bg-emerald-800 hover:bg-emerald-900 text-white text-xs font-bold rounded-xl transition-colors cursor-pointer"
+                    >
+                      <HelpCircle className="w-4 h-4" />
+                      <span>Browse Community Q&A Board</span>
+                    </button>
+                  </div>
+                );
+              }
+
+              return (
+                <div className="space-y-4">
+                  {displayed.map((q) => {
+                    const isSevere = (q.spamCount || 0) >= 5;
+                    return (
+                      <div
+                        key={q.id}
+                        className={`p-5 rounded-2xl border transition-all space-y-4 ${
+                          isSevere
+                            ? 'bg-rose-50/70 border-rose-300 ring-1 ring-rose-200'
+                            : 'bg-amber-50/50 border-amber-200'
+                        }`}
+                      >
+                        <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-3">
+                          <div>
+                            <div className="flex items-center flex-wrap gap-2 mb-1.5">
+                              <span
+                                className={`px-2.5 py-0.5 rounded-full text-xs font-bold flex items-center gap-1.5 ${
+                                  isSevere
+                                    ? 'bg-rose-600 text-white'
+                                    : 'bg-amber-200 text-amber-950'
+                                }`}
+                              >
+                                <AlertTriangle className="w-3.5 h-3.5" />
+                                <span>{q.spamCount} Spam Reports</span>
+                              </span>
+                              <span className="text-[11px] font-semibold text-stone-500 uppercase">
+                                {q.category}
+                              </span>
+                              <span className="text-stone-300">•</span>
+                              <span className="text-xs text-stone-600">
+                                Posted by <strong>{q.authorName}</strong>
+                              </span>
+                              {q.createdAt && (
+                                <>
+                                  <span className="text-stone-300">•</span>
+                                  <span className="text-xs text-stone-500">
+                                    {new Date(q.createdAt).toLocaleDateString()}
+                                  </span>
+                                </>
+                              )}
+                            </div>
+                            <h3 className="text-base font-bold text-stone-900">{q.title}</h3>
+                          </div>
+
+                          <div className="flex items-center gap-2 shrink-0">
+                            <button
+                              onClick={() => handleDeleteSpamQuestion(q.id)}
+                              className="px-3 py-1.5 bg-rose-600 hover:bg-rose-700 text-white text-xs font-bold rounded-xl flex items-center gap-1.5 transition-colors shadow-xs cursor-pointer"
+                              title="Permanently remove from database"
+                            >
+                              <Trash2 className="w-3.5 h-3.5" />
+                              <span>Delete Message</span>
+                            </button>
+
+                            <button
+                              onClick={() => handleDismissSpamQuestion(q.id)}
+                              className="px-3 py-1.5 bg-white hover:bg-stone-100 text-stone-700 border border-stone-300 text-xs font-semibold rounded-xl flex items-center gap-1.5 transition-colors cursor-pointer"
+                              title="Reset spam reports to 0"
+                            >
+                              <Check className="w-3.5 h-3.5 text-emerald-600" />
+                              <span>Dismiss Flags</span>
+                            </button>
+                          </div>
+                        </div>
+
+                        {/* Content text */}
+                        <div className="p-3.5 bg-white rounded-xl border border-stone-200 text-xs text-stone-800 leading-relaxed whitespace-pre-line font-sans">
+                          {q.details}
+                        </div>
+
+                        <div className="flex items-center justify-between text-[11px] text-stone-500 pt-1">
+                          <span>Question ID: <code className="font-mono text-[10px] text-stone-600">{q.id}</code></span>
+                          <button
+                            onClick={() => onNavigate('qa')}
+                            className="text-emerald-800 hover:underline font-bold"
+                          >
+                            Open in Community Q&A →
+                          </button>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              );
+            })()}
           </div>
         </div>
       )}

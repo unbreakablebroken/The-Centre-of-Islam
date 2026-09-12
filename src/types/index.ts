@@ -34,6 +34,7 @@ export interface Question {
   authorPhoto?: string;
   upvotes: number;
   commentsCount: number;
+  spamCount?: number;
   createdAt: string;
 }
 
@@ -47,6 +48,7 @@ export interface Comment {
   authorName: string;
   authorPhoto?: string;
   upvotes: number;
+  spamCount?: number;
   createdAt: string;
 }
 

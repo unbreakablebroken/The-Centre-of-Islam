@@ -233,10 +233,22 @@ export const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, noticeMes
                       <button
                         type="button"
                         onClick={() => handleCopy(currentHost)}
-                        className="ml-2 text-rose-700 hover:text-rose-900 flex items-center gap-1 shrink-0 font-sans font-bold"
+                        className="ml-2 text-rose-700 hover:text-rose-900 flex items-center gap-1 shrink-0 font-sans font-bold cursor-pointer"
                       >
                         {copiedDomain === currentHost ? <Check className="w-3 h-3 text-emerald-600" /> : <Copy className="w-3 h-3" />}
                         <span>{copiedDomain === currentHost ? 'Copied' : 'Copy'}</span>
+                      </button>
+                    </div>
+
+                    <div className="flex items-center justify-between bg-white px-2.5 py-1.5 rounded-lg border border-rose-300 font-mono text-[10px]">
+                      <span className="truncate">the-centre-of-islam.vercel.app</span>
+                      <button
+                        type="button"
+                        onClick={() => handleCopy('the-centre-of-islam.vercel.app')}
+                        className="ml-2 text-rose-700 hover:text-rose-900 flex items-center gap-1 shrink-0 font-sans font-bold cursor-pointer"
+                      >
+                        {copiedDomain === 'the-centre-of-islam.vercel.app' ? <Check className="w-3 h-3 text-emerald-600" /> : <Copy className="w-3 h-3" />}
+                        <span>{copiedDomain === 'the-centre-of-islam.vercel.app' ? 'Copied' : 'Copy'}</span>
                       </button>
                     </div>
 
@@ -245,7 +257,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, noticeMes
                       <button
                         type="button"
                         onClick={() => handleCopy('centre-of-islam.vercel.app')}
-                        className="ml-2 text-rose-700 hover:text-rose-900 flex items-center gap-1 shrink-0 font-sans font-bold"
+                        className="ml-2 text-rose-700 hover:text-rose-900 flex items-center gap-1 shrink-0 font-sans font-bold cursor-pointer"
                       >
                         {copiedDomain === 'centre-of-islam.vercel.app' ? <Check className="w-3 h-3 text-emerald-600" /> : <Copy className="w-3 h-3" />}
                         <span>{copiedDomain === 'centre-of-islam.vercel.app' ? 'Copied' : 'Copy'}</span>
