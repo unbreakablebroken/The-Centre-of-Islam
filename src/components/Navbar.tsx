@@ -106,14 +106,12 @@ export const Navbar: React.FC<NavbarProps> = ({ activePage, onNavigate, onOpenAu
             onClick={() => handleNavClick('home')}
             className="flex items-center gap-2.5 sm:gap-3 text-left group focus:outline-none shrink-0"
           >
-            <div className="w-10 h-10 rounded-xl overflow-hidden shadow-xs border border-emerald-700/50 group-hover:scale-105 transition-transform shrink-0 bg-emerald-950 flex items-center justify-center">
-              <img
-                src="/logo.jpg"
-                alt="Centre of Islam Logo"
-                className="w-full h-full object-cover"
-                referrerPolicy="no-referrer"
-              />
-            </div>
+            <img
+              src="/logo.png"
+              alt="Centre of Islam Logo"
+              className="w-10 h-10 object-contain drop-shadow-xs group-hover:scale-105 transition-transform shrink-0"
+              referrerPolicy="no-referrer"
+            />
             <div className="flex flex-col justify-center">
               <span className="text-lg sm:text-xl font-extrabold tracking-tight text-stone-900 leading-tight whitespace-nowrap">
                 Centre of Islam

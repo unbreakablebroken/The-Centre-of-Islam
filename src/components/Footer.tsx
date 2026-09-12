@@ -16,14 +16,12 @@ export const Footer: React.FC<FooterProps> = ({ onNavigate }) => {
           {/* Brand Col */}
           <div className="lg:col-span-2 space-y-4">
             <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-xl overflow-hidden shadow-xs border border-emerald-700/60 bg-emerald-950 flex items-center justify-center shrink-0">
-                <img
-                  src="/logo.jpg"
-                  alt="Centre of Islam Logo"
-                  className="w-full h-full object-cover"
-                  referrerPolicy="no-referrer"
-                />
-              </div>
+              <img
+                src="/logo.png"
+                alt="Centre of Islam Logo"
+                className="w-10 h-10 object-contain drop-shadow-sm shrink-0"
+                referrerPolicy="no-referrer"
+              />
               <span className="text-xl font-bold text-white tracking-tight">Centre of Islam</span>
             </div>
             <p className="text-sm text-stone-400 max-w-sm leading-relaxed">

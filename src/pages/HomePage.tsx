@@ -112,14 +112,12 @@ export const HomePage: React.FC<HomePageProps> = ({ onNavigate }) => {
 
         <div className="relative z-10 max-w-3xl space-y-6">
           <div className="flex items-center gap-3.5">
-            <div className="w-12 h-12 sm:w-14 sm:h-14 rounded-2xl overflow-hidden shadow-md border border-emerald-500/40 shrink-0 bg-emerald-950">
-              <img
-                src="/logo.jpg"
-                alt="Centre of Islam Emblem"
-                className="w-full h-full object-cover"
-                referrerPolicy="no-referrer"
-              />
-            </div>
+            <img
+              src="/logo.png"
+              alt="Centre of Islam Emblem"
+              className="w-14 h-14 sm:w-16 sm:h-16 object-contain drop-shadow-md shrink-0"
+              referrerPolicy="no-referrer"
+            />
             <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-emerald-800/80 border border-emerald-700/80 text-amber-300 text-xs font-semibold tracking-wide">
               <Sparkles className="w-3.5 h-3.5 text-amber-400" />
               <span>Welcome to Centre of Islam</span>

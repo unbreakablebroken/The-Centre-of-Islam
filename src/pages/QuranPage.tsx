@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { SURAH_LIST, fetchSurahVerses, POPULAR_SURAHS_SAMPLE } from '../data/quranData';
+import { SURAH_LIST, fetchSurahVerses, POPULAR_SURAHS_SAMPLE, QURAN_RECITERS, QuranReciter } from '../data/quranData';
 import { SurahMeta, Ayah } from '../types';
 import { 
   BookOpen, 
@@ -14,7 +14,8 @@ import {
   Settings2, 
   ChevronRight,
   Sparkles,
-  RotateCcw
+  RotateCcw,
+  Mic
 } from 'lucide-react';
 
 export const QuranPage: React.FC = () => {
@@ -26,6 +27,16 @@ export const QuranPage: React.FC = () => {
   const [arabicFontSize, setArabicFontSize] = useState(26); // px
   const [isPlaying, setIsPlaying] = useState(false);
   const [currentPlayingAyah, setCurrentPlayingAyah] = useState<number | null>(null);
+  const [selectedReciter, setSelectedReciter] = useState<QuranReciter>(() => {
+    try {
+      const saved = localStorage.getItem('coi_selected_reciter');
+      if (saved) {
+        const found = QURAN_RECITERS.find(r => r.id === saved);
+        if (found) return found;
+      }
+    } catch {}
+    return QURAN_RECITERS[0];
+  });
   const [bookmarks, setBookmarks] = useState<{ surah: number; ayah: number }[]>(() => {
     try {
       const saved = localStorage.getItem('coi_quran_bookmarks');
@@ -75,21 +86,45 @@ export const QuranPage: React.FC = () => {
     return bookmarks.some(b => b.surah === surahNum && b.ayah === ayahNum);
   };
 
-  // Reciter audio url generator (Mishary Alafasy)
-  const getAudioUrl = (surahNum: number, ayahNum: number) => {
+  // Reciter audio url generator with dynamic reciter folder
+  const getAudioUrl = (surahNum: number, ayahNum: number, folder?: string) => {
     const s = surahNum.toString().padStart(3, '0');
     const a = ayahNum.toString().padStart(3, '0');
-    return `https://everyayah.com/data/Alafasy_128kbps/${s}${a}.mp3`;
+    const targetFolder = folder || selectedReciter.folder;
+    return `https://everyayah.com/data/${targetFolder}/${s}${a}.mp3`;
   };
 
-  const playAyahAudio = (ayahNum: number) => {
+  const handleReciterChange = (reciterId: string) => {
+    const newReciter = QURAN_RECITERS.find(r => r.id === reciterId);
+    if (!newReciter) return;
+    setSelectedReciter(newReciter);
+    try {
+      localStorage.setItem('coi_selected_reciter', newReciter.id);
+    } catch {}
+
+    // If currently playing, seamlessly switch to the new reciter for current verse
+    if (isPlaying && currentPlayingAyah !== null) {
+      if (audioRef.current) {
+        audioRef.current.pause();
+      }
+      const url = getAudioUrl(selectedSurah.number, currentPlayingAyah, newReciter.folder);
+      if (!audioRef.current) {
+        audioRef.current = new Audio();
+      }
+      audioRef.current.src = url;
+      audioRef.current.play().catch(err => console.error('Audio reciter switch error:', err));
+    }
+  };
+
+  const playAyahAudio = (ayahNum: number, overrideReciter?: QuranReciter) => {
     if (currentPlayingAyah === ayahNum && isPlaying) {
       audioRef.current?.pause();
       setIsPlaying(false);
       return;
     }
 
-    const url = getAudioUrl(selectedSurah.number, ayahNum);
+    const targetFolder = overrideReciter ? overrideReciter.folder : selectedReciter.folder;
+    const url = getAudioUrl(selectedSurah.number, ayahNum, targetFolder);
     if (!audioRef.current) {
       audioRef.current = new Audio();
     }
@@ -134,7 +169,7 @@ export const QuranPage: React.FC = () => {
             Read, Listen & Reflect
           </h1>
           <p className="text-sm text-stone-600 mt-1">
-            Authentic Uthmani text, verified English translations, and audio recitations by Shaykh Mishary Alafasy.
+            Authentic Uthmani text, verified English translations, and audio recitations from 14 world-renowned Qaris.
           </p>
         </div>
 
@@ -251,18 +286,60 @@ export const QuranPage: React.FC = () => {
             </div>
 
             {/* Audio Recitation Bar */}
-            <div className="mt-6 pt-4 border-t border-emerald-800/80 flex flex-wrap items-center justify-between gap-3">
-              <button
-                id="play-all-surah-btn"
-                onClick={() => playAyahAudio(1)}
-                className="px-4 py-2 bg-amber-400 hover:bg-amber-500 text-emerald-950 font-bold rounded-xl text-xs flex items-center gap-2 transition-colors shadow-xs"
-              >
-                {isPlaying ? <Pause className="w-4 h-4" /> : <Play className="w-4 h-4" />}
-                <span>{isPlaying ? 'Pause Recitation' : 'Listen to Full Surah'}</span>
-              </button>
+            <div className="mt-6 pt-4 border-t border-emerald-800/80 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+              <div className="flex items-center gap-3">
+                <button
+                  id="play-all-surah-btn"
+                  onClick={() => playAyahAudio(1)}
+                  className="px-4 py-2 bg-amber-400 hover:bg-amber-500 text-emerald-950 font-bold rounded-xl text-xs flex items-center gap-2 transition-colors shadow-xs cursor-pointer"
+                >
+                  {isPlaying ? <Pause className="w-4 h-4" /> : <Play className="w-4 h-4" />}
+                  <span>{isPlaying ? 'Pause Recitation' : 'Listen to Full Surah'}</span>
+                </button>
+                {isPlaying && currentPlayingAyah && (
+                  <span className="text-[11px] text-emerald-200 bg-emerald-900/80 px-2.5 py-1 rounded-lg border border-emerald-700/60 font-medium">
+                    Ayah {currentPlayingAyah} of {selectedSurah.numberOfAyahs}
+                  </span>
+                )}
+              </div>
 
-              <span className="text-xs text-emerald-200">
-                Reciter: <strong>Shaykh Mishary Rashid Alafasy</strong>
+              {/* Reciter Voice Selector */}
+              <div className="flex items-center gap-2">
+                <div className="flex items-center gap-1.5 text-xs text-amber-300 font-semibold shrink-0">
+                  <Mic className="w-3.5 h-3.5 text-amber-400" />
+                  <span className="hidden sm:inline">Voice:</span>
+                </div>
+                <div className="relative">
+                  <select
+                    id="quran-reciter-select"
+                    value={selectedReciter.id}
+                    onChange={(e) => handleReciterChange(e.target.value)}
+                    aria-label="Select Quran Reciter"
+                    className="appearance-none bg-emerald-900/90 hover:bg-emerald-800/90 text-white text-xs font-semibold pl-3 pr-8 py-2 rounded-xl border border-emerald-700/80 focus:ring-2 focus:ring-amber-400 focus:outline-none cursor-pointer transition-all shadow-2xs"
+                  >
+                    {QURAN_RECITERS.map((r) => (
+                      <option key={r.id} value={r.id} className="bg-stone-900 text-white py-1">
+                        {r.name} • {r.style} ({r.origin})
+                      </option>
+                    ))}
+                  </select>
+                  <div className="pointer-events-none absolute right-2.5 top-1/2 -translate-y-1/2 text-amber-300 text-xs">
+                    ▼
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Reciter Detail Info Chip */}
+            <div className="mt-2.5 flex flex-wrap items-center justify-between text-[11px] text-emerald-200/90 pt-1 border-t border-emerald-900/60">
+              <span className="flex items-center gap-1.5">
+                <span className="w-1.5 h-1.5 rounded-full bg-amber-400"></span>
+                <span>Active Voice: <strong className="text-white">{selectedReciter.name}</strong></span>
+                <span className="text-emerald-500">•</span>
+                <span className="font-arabic text-amber-200 text-xs">{selectedReciter.arabicName}</span>
+              </span>
+              <span className="text-emerald-300/80 italic text-[11px] mt-1 sm:mt-0">
+                {selectedReciter.description}
               </span>
             </div>
           </div>

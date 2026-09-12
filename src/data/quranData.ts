@@ -175,6 +175,145 @@ export const POPULAR_SURAHS_SAMPLE: Record<number, Ayah[]> = {
   ]
 };
 
+export interface QuranReciter {
+  id: string;
+  name: string;
+  arabicName: string;
+  folder: string;
+  style: 'Murattal' | 'Mujawwad';
+  origin: string;
+  description: string;
+}
+
+export const QURAN_RECITERS: QuranReciter[] = [
+  {
+    id: 'alafasy',
+    name: 'Mishary Rashid Alafasy',
+    arabicName: 'مشاري راشد العفاسي',
+    folder: 'Alafasy_128kbps',
+    style: 'Murattal',
+    origin: 'Kuwait',
+    description: 'Beloved melodious, crystal-clear recitation'
+  },
+  {
+    id: 'abdulbasit-murattal',
+    name: 'Abdul Basit Abdul Samad (Murattal)',
+    arabicName: 'عبد الباسط عبد الصمد - مرتل',
+    folder: 'Abdul_Basit_Murattal_64kbps',
+    style: 'Murattal',
+    origin: 'Egypt',
+    description: 'The Golden Throat, timeless classical Egyptian master'
+  },
+  {
+    id: 'abdulbasit-mujawwad',
+    name: 'Abdul Basit Abdul Samad (Mujawwad)',
+    arabicName: 'عبد الباسط عبد الصمد - مجود',
+    folder: 'Abdul_Basit_Mujawwad_128kbps',
+    style: 'Mujawwad',
+    origin: 'Egypt',
+    description: 'Slow, soulful maqamat with breathtaking breath control'
+  },
+  {
+    id: 'husary',
+    name: 'Mahmoud Khalil Al-Husary',
+    arabicName: 'محمود خليل الحصري',
+    folder: 'Husary_128kbps',
+    style: 'Murattal',
+    origin: 'Egypt',
+    description: 'The Master Teacher of Tajweed and perfect articulation'
+  },
+  {
+    id: 'minshawi-murattal',
+    name: 'Mohamed Siddiq El-Minshawi (Murattal)',
+    arabicName: 'محمد صديق المنشاوي - مرتل',
+    folder: 'Minshawy_Murattal_128kbps',
+    style: 'Murattal',
+    origin: 'Egypt',
+    description: 'The Weeping Voice, profoundly touching and emotional'
+  },
+  {
+    id: 'minshawi-mujawwad',
+    name: 'Mohamed Siddiq El-Minshawi (Mujawwad)',
+    arabicName: 'محمد صديق المنشاوي - مجود',
+    folder: 'Minshawy_Mujawwad_192kbps',
+    style: 'Mujawwad',
+    origin: 'Egypt',
+    description: 'Majestic, slow, heart-melting Quranic recital'
+  },
+  {
+    id: 'muaiqly',
+    name: 'Maher Al-Muaiqly',
+    arabicName: 'ماهر المعيقلي',
+    folder: 'Maher_AlMuaiqly_64kbps',
+    style: 'Murattal',
+    origin: 'Masjid al-Haram, Makkah',
+    description: 'Distinguished Imam of the Grand Mosque in Makkah'
+  },
+  {
+    id: 'sudais',
+    name: 'Abdur-Rahman As-Sudais',
+    arabicName: 'عبد الرحمن السديس',
+    folder: 'Abdurrahmaan_As-Sudais_192kbps',
+    style: 'Murattal',
+    origin: 'Masjid al-Haram, Makkah',
+    description: 'Chief Imam of the Grand Mosque in Makkah, moving & spirited'
+  },
+  {
+    id: 'shuraim',
+    name: 'Saud Ash-Shuraim',
+    arabicName: 'سعود الشريم',
+    folder: 'Saood_ash-Shuraym_128kbps',
+    style: 'Murattal',
+    origin: 'Masjid al-Haram, Makkah',
+    description: 'Legendary former Imam of Masjid al-Haram, rich & rhythmic'
+  },
+  {
+    id: 'ghamdi',
+    name: 'Saad Al-Ghamdi',
+    arabicName: 'سعد الغامدي',
+    folder: 'Ghamadi_40kbps',
+    style: 'Murattal',
+    origin: 'Saudi Arabia',
+    description: 'Warm, gentle, and rhythmic flowing recitation'
+  },
+  {
+    id: 'shatri',
+    name: 'Abu Bakr Al-Shatri',
+    arabicName: 'أبو بكر الشاطري',
+    folder: 'Abu_Bakr_Ash-Shaatree_128kbps',
+    style: 'Murattal',
+    origin: 'Saudi Arabia / Yemen',
+    description: 'Deep, powerful baritone resonance and deliberate pace'
+  },
+  {
+    id: 'dussary',
+    name: 'Yasser Ad-Dussary',
+    arabicName: 'ياسر الدوسري',
+    folder: 'Yasser_Ad-Dussary_128kbps',
+    style: 'Murattal',
+    origin: 'Masjid al-Haram, Makkah',
+    description: 'Imam of Masjid al-Haram, stirring and soulful emotional depth'
+  },
+  {
+    id: 'qatami',
+    name: 'Nasser Al-Qatami',
+    arabicName: 'ناصر القطامي',
+    folder: 'Nasser_Alqatami_128kbps',
+    style: 'Murattal',
+    origin: 'Riyadh, Saudi Arabia',
+    description: 'Tender, calm, and deeply meditative recitation'
+  },
+  {
+    id: 'jaber',
+    name: 'Ali Jaber',
+    arabicName: 'علي جابر',
+    folder: 'Ali_Jaber_64kbps',
+    style: 'Murattal',
+    origin: 'Masjid al-Haram, Makkah',
+    description: 'Late beloved Imam of Masjid al-Haram, world-renowned voice'
+  }
+];
+
 // API helper to fetch verses if needed
 export async function fetchSurahVerses(surahNumber: number): Promise<Ayah[]> {
   try {
