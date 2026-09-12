@@ -242,39 +242,9 @@ export function getHijriDate(gregorianDate: Date = new Date()): {
     { en: 'Dhu al-Hijjah', ar: 'ذُو الحِجَّة' }
   ];
 
-  // Try standard Umm al-Qura official Islamic calendar formatting via Intl API
-  try {
-    const formatter = new Intl.DateTimeFormat('en-u-ca-islamic-umalqura', {
-      day: 'numeric',
-      month: 'numeric',
-      year: 'numeric'
-    });
-    const parts = formatter.formatToParts(gregorianDate);
-    const dayPart = parts.find(p => p.type === 'day')?.value;
-    const monthPart = parts.find(p => p.type === 'month')?.value;
-    const yearPart = parts.find(p => p.type === 'year')?.value;
-
-    if (dayPart && monthPart && yearPart) {
-      const d = parseInt(dayPart, 10);
-      const m = parseInt(monthPart, 10) - 1; // 0-indexed
-      const y = parseInt(yearPart, 10);
-      const monthData = islamicMonths[m] || islamicMonths[0];
-
-      return {
-        day: d,
-        monthIndex: m,
-        monthName: monthData.en,
-        monthNameArabic: monthData.ar,
-        year: y,
-        formatted: `${d} ${monthData.en} ${y} AH`
-      };
-    }
-  } catch (e) {
-    console.warn('Intl Umm al-Qura formatter warning, using calibrated algorithmic fallback:', e);
-  }
-
-  // Calibrated astronomical lunar fallback anchored at 2026-09-10 (28 Rabi' al-Awwal 1448 AH)
-  const anchorTime = Date.UTC(2026, 8, 10); // September 10, 2026
+  // Calibrated astronomical lunar calculation anchored directly at:
+  // Saturday, September 12, 2026 = 29 Rabi' al-Awwal 1448 AH
+  const anchorTime = Date.UTC(2026, 8, 12); // September 12, 2026
   const targetTime = Date.UTC(
     gregorianDate.getFullYear(),
     gregorianDate.getMonth(),
@@ -283,8 +253,8 @@ export function getHijriDate(gregorianDate: Date = new Date()): {
   const diffDays = Math.round((targetTime - anchorTime) / (1000 * 60 * 60 * 24));
 
   // Anchor Hijri day absolute count from 1 Muharram 1448:
-  // 1448 Muharram (30) + Safar (29) + 28 Rabi' al-Awwal = 87 days into 1448
-  let dayInYear = 87 + diffDays;
+  // 1448 Muharram (30) + Safar (29) + 29 Rabi' al-Awwal = 88 days into 1448
+  let dayInYear = 88 + diffDays;
   let year = 1448;
 
   // Month lengths in lunar calendar
