@@ -2,9 +2,15 @@ export interface PrintableChartItem {
   id: string;
   title: string;
   subtitle: string;
+  itemType?: string; // e.g. 'Poster', 'Chart', 'Notes', 'Infographic', 'Syllabus', etc.
   category: string;
   description: string;
-  orientation: 'portrait' | 'landscape';
+  orientation?: 'portrait' | 'landscape';
+  fileType?: 'pdf' | 'image' | 'docx' | 'doc' | 'sheet' | 'interactive' | string;
+  fileName?: string;
+  fileSize?: string;
+  fileDataUrl?: string;
+  externalUrl?: string;
   imageUrl?: string;
   attachments?: {
     name: string;
@@ -12,7 +18,7 @@ export interface PrintableChartItem {
     size: string;
     dataUrl: string;
   }[];
-  sections: {
+  sections?: {
     heading: string;
     subtext?: string;
     items: {
@@ -23,7 +29,9 @@ export interface PrintableChartItem {
       step?: number;
     }[];
   }[];
-  footerNote: string;
+  footerNote?: string;
+  authorEmail?: string;
+  createdAt?: string;
 }
 
 export const PRINTABLE_CHARTS: PrintableChartItem[] = [
@@ -31,6 +39,8 @@ export const PRINTABLE_CHARTS: PrintableChartItem[] = [
     id: 'wudu-guide',
     title: 'The Complete Step-by-Step Guide to Wudu (Ablution)',
     subtitle: 'Centre of Islam • Visual Reference for Home, Madrasah & Mosque',
+    itemType: 'Chart',
+    fileType: 'interactive',
     category: 'Salah & Worship',
     description: 'A comprehensive step-by-step visual chart of Sunnah and Fard steps of ablution with Arabic intentions and supplications.',
     orientation: 'portrait',
@@ -105,6 +115,8 @@ export const PRINTABLE_CHARTS: PrintableChartItem[] = [
     id: 'salah-breakdown',
     title: 'Daily 5 Prayers & Rak\'ah Breakdown Chart',
     subtitle: 'Fard, Sunnah Mu\'akkadah, Witr & Nafl Detailed Chart',
+    itemType: 'Chart',
+    fileType: 'interactive',
     category: 'Salah & Worship',
     description: 'Clean wall chart showing the exact order and composition of Rak\'ahs for all 5 daily prayers plus Jum\'ah.',
     orientation: 'portrait',
@@ -145,6 +157,8 @@ export const PRINTABLE_CHARTS: PrintableChartItem[] = [
     id: 'names-of-allah',
     title: 'The 99 Beautiful Names of Allah (Asma-ul-Husna)',
     subtitle: 'With Arabic Typography, English Transliteration & Meaning',
+    itemType: 'Poster',
+    fileType: 'interactive',
     category: 'Daily Reminders',
     description: 'A wall poster displaying divine attributes of Allah to recite, memorize, and reflect upon.',
     orientation: 'landscape',
@@ -177,6 +191,8 @@ export const PRINTABLE_CHARTS: PrintableChartItem[] = [
     id: 'daily-duas',
     title: 'Essential Daily Duas from the Sunnah',
     subtitle: 'Morning, Evening, Meals, Travel & Rest Supplications',
+    itemType: 'Notes',
+    fileType: 'interactive',
     category: 'Children & Beginners',
     description: 'Pocket and fridge chart with fundamental daily remembrances for the entire household.',
     orientation: 'portrait',

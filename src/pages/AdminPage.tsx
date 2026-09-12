@@ -3,6 +3,8 @@ import { useAuth } from '../context/AuthContext';
 import { useVisitor } from '../context/VisitorContext';
 import { PageId, AdminPrintableChart, GeneralNoteItem, NoteAttachment, Question } from '../types';
 import { db } from '../lib/firebase';
+import { PdfDocumentViewerModal } from '../components/PdfDocumentViewerModal';
+import { PrintableChartItem } from '../data/printableChartsData';
 import { 
   collection, 
   addDoc, 
@@ -91,11 +93,15 @@ export const AdminPage: React.FC<AdminPageProps> = ({ onNavigate }) => {
 
   // --- FORM STATE: CHARTS & POSTERS ---
   const [chartTitle, setChartTitle] = useState('');
+  const [chartItemType, setChartItemType] = useState('Poster');
   const [chartSubtitle, setChartSubtitle] = useState('');
   const [chartCategory, setChartCategory] = useState('Salah & Worship');
   const [chartDescription, setChartDescription] = useState('');
   const [chartFooter, setChartFooter] = useState('');
+  const [chartExternalUrl, setChartExternalUrl] = useState('');
   const [chartAttachments, setChartAttachments] = useState<NoteAttachment[]>([]);
+  const [chartPreviewItem, setChartPreviewItem] = useState<PrintableChartItem | null>(null);
+  const [isChartPreviewOpen, setIsChartPreviewOpen] = useState(false);
   const [chartSections, setChartSections] = useState<
     { heading: string; items: { label: string; arabic: string; transliteration: string; detail: string }[] }[]
   >([
@@ -204,13 +210,31 @@ export const AdminPage: React.FC<AdminPageProps> = ({ onNavigate }) => {
           parsedAttachments = data.attachments ? (typeof data.attachments === 'string' ? JSON.parse(data.attachments) : data.attachments) : [];
         } catch { parsedAttachments = []; }
 
+        const primaryFileUrl = data.fileDataUrl || data.imageUrl || (parsedAttachments[0]?.dataUrl) || '';
+        let inferredFileType = data.fileType || 'other';
+        if (!data.fileType) {
+          if (primaryFileUrl.startsWith('data:application/pdf') || (data.fileName && data.fileName.endsWith('.pdf'))) {
+            inferredFileType = 'pdf';
+          } else if (primaryFileUrl.startsWith('data:image/') || data.imageUrl) {
+            inferredFileType = 'image';
+          } else if (data.fileName && /\.(docx?)$/i.test(data.fileName)) {
+            inferredFileType = 'docx';
+          }
+        }
+
         chartsList.push({
           id: d.id,
           title: data.title || '',
           subtitle: data.subtitle,
+          itemType: data.itemType || 'Poster',
           category: data.category || 'Salah & Worship',
           description: data.description || '',
-          imageUrl: data.imageUrl,
+          fileType: inferredFileType,
+          fileName: data.fileName || (parsedAttachments[0]?.name) || '',
+          fileSize: data.fileSize || (parsedAttachments[0]?.size) || '',
+          fileDataUrl: primaryFileUrl,
+          imageUrl: data.imageUrl || (inferredFileType === 'image' ? primaryFileUrl : undefined),
+          externalUrl: data.externalUrl || '',
           attachments: parsedAttachments,
           sections: parsedSections,
           footerNote: data.footerNote,
@@ -314,23 +338,87 @@ export const AdminPage: React.FC<AdminPageProps> = ({ onNavigate }) => {
     });
   };
 
-  // Handle files selected for Charts/Posters
+  // Handle files selected for Charts/Posters (PDF, DOCX, Images, etc.)
   const handleProcessChartFiles = (files: FileList | null) => {
     if (!files || files.length === 0) return;
 
     Array.from(files).forEach((file) => {
-      const reader = new FileReader();
-      reader.onload = () => {
-        const dataUrl = reader.result as string;
-        const newAttachment: NoteAttachment = {
-          name: file.name,
-          type: file.type || 'image/png',
-          size: formatFileSize(file.size),
-          dataUrl
+      // If large image from Canva (> 750KB), compress so it fits comfortably in Firestore
+      if (file.type.startsWith('image/')) {
+        const reader = new FileReader();
+        reader.onload = (e) => {
+          const rawDataUrl = e.target?.result as string;
+          if (file.size > 750 * 1024) {
+            const img = new Image();
+            img.onload = () => {
+              const canvas = document.createElement('canvas');
+              let width = img.width;
+              let height = img.height;
+              const maxDim = 2000;
+              if (width > maxDim || height > maxDim) {
+                if (width > height) {
+                  height = Math.round((height * maxDim) / width);
+                  width = maxDim;
+                } else {
+                  width = Math.round((width * maxDim) / height);
+                  height = maxDim;
+                }
+              }
+              canvas.width = width;
+              canvas.height = height;
+              const ctx = canvas.getContext('2d');
+              if (ctx) {
+                ctx.drawImage(img, 0, 0, width, height);
+                const compressedDataUrl = canvas.toDataURL('image/jpeg', 0.86);
+                const approxSize = Math.round(compressedDataUrl.length * 0.75);
+                setChartAttachments((prev) => [
+                  ...prev,
+                  {
+                    name: file.name,
+                    type: 'image/jpeg',
+                    size: formatFileSize(approxSize),
+                    dataUrl: compressedDataUrl
+                  }
+                ]);
+              } else {
+                setChartAttachments((prev) => [
+                  ...prev,
+                  { name: file.name, type: file.type || 'image/png', size: formatFileSize(file.size), dataUrl: rawDataUrl }
+                ]);
+              }
+            };
+            img.src = rawDataUrl;
+          } else {
+            setChartAttachments((prev) => [
+              ...prev,
+              { name: file.name, type: file.type || 'image/png', size: formatFileSize(file.size), dataUrl: rawDataUrl }
+            ]);
+          }
         };
-        setChartAttachments((prev) => [...prev, newAttachment]);
-      };
-      reader.readAsDataURL(file);
+        reader.readAsDataURL(file);
+      } else {
+        // PDF, DOCX, DOC, or other documents
+        const reader = new FileReader();
+        reader.onload = () => {
+          const dataUrl = reader.result as string;
+          let fileType = file.type;
+          if (!fileType) {
+            if (file.name.toLowerCase().endsWith('.pdf')) fileType = 'application/pdf';
+            else if (file.name.toLowerCase().endsWith('.docx')) fileType = 'application/vnd.openxmlformats-officedocument.wordprocessingml.document';
+            else if (file.name.toLowerCase().endsWith('.doc')) fileType = 'application/msword';
+          }
+          setChartAttachments((prev) => [
+            ...prev,
+            {
+              name: file.name,
+              type: fileType || 'application/octet-stream',
+              size: formatFileSize(file.size),
+              dataUrl
+            }
+          ]);
+        };
+        reader.readAsDataURL(file);
+      }
     });
   };
 
@@ -431,27 +519,47 @@ export const AdminPage: React.FC<AdminPageProps> = ({ onNavigate }) => {
 
     setIsSubmittingChart(true);
     try {
+      const primaryFile = chartAttachments[0];
+      let inferredFileType = 'other';
+      if (primaryFile) {
+        if (primaryFile.type.includes('pdf') || primaryFile.name.toLowerCase().endsWith('.pdf')) {
+          inferredFileType = 'pdf';
+        } else if (primaryFile.type.startsWith('image/') || /\.(png|jpe?g|webp|gif|svg)$/i.test(primaryFile.name)) {
+          inferredFileType = 'image';
+        } else if (primaryFile.type.includes('word') || /\.(docx?)$/i.test(primaryFile.name)) {
+          inferredFileType = 'docx';
+        }
+      }
+
       const docData = {
         title: chartTitle.trim(),
-        subtitle: chartSubtitle.trim() || 'Centre of Islam • Visual Reference & Study Poster',
+        itemType: chartItemType.trim() || 'Poster',
+        subtitle: chartSubtitle.trim() || 'Centre of Islam • Visual Reference & Study Material',
         category: chartCategory,
         description: chartDescription.trim(),
+        fileType: inferredFileType,
+        fileName: primaryFile?.name || '',
+        fileSize: primaryFile?.size || '',
+        fileDataUrl: primaryFile?.dataUrl || '',
+        imageUrl: inferredFileType === 'image' ? (primaryFile?.dataUrl || '') : '',
+        externalUrl: chartExternalUrl.trim(),
         sections: JSON.stringify(chartSections),
         attachments: JSON.stringify(chartAttachments),
-        imageUrl: chartAttachments[0]?.dataUrl || '',
         footerNote: chartFooter.trim() || 'Centre of Islam • Authentic Guidance and Verified References',
         authorEmail: user?.email || 'Administrator',
         createdAt: new Date().toISOString()
       };
 
       await addDoc(collection(db, 'printable_charts'), docData);
-      setActionSuccessMsg(`Poster "${chartTitle}" published successfully!`);
+      setActionSuccessMsg(`${chartItemType || 'Material'} "${chartTitle}" published successfully!`);
 
       // Reset
       setChartTitle('');
+      setChartItemType('Poster');
       setChartSubtitle('');
       setChartDescription('');
       setChartFooter('');
+      setChartExternalUrl('');
       setChartAttachments([]);
       setChartSections([
         {
@@ -463,7 +571,7 @@ export const AdminPage: React.FC<AdminPageProps> = ({ onNavigate }) => {
       await loadAdminItems();
       setTimeout(() => setActionSuccessMsg(null), 4000);
     } catch (err: any) {
-      alert('Failed to upload chart: ' + err.message);
+      alert('Failed to upload material: ' + err.message);
     } finally {
       setIsSubmittingChart(false);
     }
@@ -1287,7 +1395,7 @@ export const AdminPage: React.FC<AdminPageProps> = ({ onNavigate }) => {
             <form onSubmit={handleCreateChart} className="space-y-4 text-xs sm:text-sm">
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <div>
-                  <label className="block font-bold text-stone-800 mb-1">Chart Title *</label>
+                  <label className="block font-bold text-stone-800 mb-1">Chart or Poster Title *</label>
                   <input
                     type="text"
                     required
@@ -1310,7 +1418,44 @@ export const AdminPage: React.FC<AdminPageProps> = ({ onNavigate }) => {
                     <option value="Ramadan & Fasting">Ramadan & Fasting</option>
                     <option value="Children & Beginners">Children & Beginners</option>
                     <option value="Tajweed & Quran">Tajweed & Quran</option>
+                    <option value="Hadith & Sunnah">Hadith & Sunnah</option>
+                    <option value="Islamic History">Islamic History</option>
                   </select>
+                </div>
+              </div>
+
+              {/* Type of Thing (custom input as requested: 'poster', 'notes', 'chart', 'etc') */}
+              <div>
+                <label className="block font-bold text-stone-800 mb-1">
+                  Type of Thing * (Type 'poster', 'notes', 'chart', or anything)
+                </label>
+                <div className="space-y-2">
+                  <input
+                    type="text"
+                    required
+                    placeholder="e.g., poster, notes, chart, infographic, syllabus, worksheet..."
+                    value={chartItemType}
+                    onChange={(e) => setChartItemType(e.target.value)}
+                    className="w-full px-3.5 py-2 bg-stone-50 border border-stone-300 rounded-xl focus:ring-2 focus:ring-emerald-700 text-stone-900 focus:outline-none"
+                  />
+                  {/* Quick selection chips */}
+                  <div className="flex items-center gap-1.5 flex-wrap">
+                    <span className="text-[10px] text-stone-400 font-semibold">Quick select:</span>
+                    {['Poster', 'Chart', 'Notes', 'Infographic', 'Syllabus', 'Worksheet', 'Cheatsheet'].map((sug) => (
+                      <button
+                        key={sug}
+                        type="button"
+                        onClick={() => setChartItemType(sug)}
+                        className={`px-2.5 py-0.5 rounded-lg text-[11px] font-bold border transition-all cursor-pointer ${
+                          chartItemType.toLowerCase() === sug.toLowerCase()
+                            ? 'bg-emerald-800 text-white border-emerald-800 shadow-2xs'
+                            : 'bg-stone-100 text-stone-600 border-stone-200 hover:bg-stone-200'
+                        }`}
+                      >
+                        {sug}
+                      </button>
+                    ))}
+                  </div>
                 </div>
               </div>
 
@@ -1330,18 +1475,32 @@ export const AdminPage: React.FC<AdminPageProps> = ({ onNavigate }) => {
                 <textarea
                   required
                   rows={2}
-                  placeholder="Brief description of this printable chart..."
+                  placeholder="Brief description of this printable poster or chart (will appear on cards in the library)..."
                   value={chartDescription}
                   onChange={(e) => setChartDescription(e.target.value)}
                   className="w-full px-3.5 py-2 bg-stone-50 border border-stone-300 rounded-xl focus:ring-2 focus:ring-emerald-700 text-stone-900 focus:outline-none"
                 />
               </div>
 
-              {/* Upload Graphic Poster Image / PDF */}
-              <div className="space-y-2">
-                <label className="block font-bold text-stone-800">
-                  Upload Poster File from Computer (Optional Graphic / PDF)
-                </label>
+              {/* Upload Graphic / Canva Poster / PDF / DOCX */}
+              <div className="space-y-3">
+                <div className="flex items-center justify-between">
+                  <label className="block font-bold text-stone-800">
+                    Upload File from Computer (PDF, Images, DOCX, etc.)
+                  </label>
+                  <span className="text-[11px] font-bold text-emerald-800 bg-emerald-50 px-2 py-0.5 rounded-md border border-emerald-200">
+                    Canva Friendly
+                  </span>
+                </div>
+
+                {/* Helpful Canva guidance callout */}
+                <div className="p-3 bg-amber-50/80 border border-amber-200/80 rounded-xl text-xs text-amber-950 flex items-start gap-2.5">
+                  <Sparkles className="w-4 h-4 text-amber-600 shrink-0 mt-0.5" />
+                  <p className="leading-relaxed">
+                    <strong>Designing in Canva?</strong> In Canva, click <strong>Share → Download</strong> and choose either <strong>PDF Standard</strong> or <strong>PNG</strong>, then drag & drop the file below!
+                  </p>
+                </div>
+
                 <div
                   onDragOver={(e) => { e.preventDefault(); setIsDraggingChartFiles(true); }}
                   onDragLeave={() => setIsDraggingChartFiles(false)}
@@ -1360,43 +1519,72 @@ export const AdminPage: React.FC<AdminPageProps> = ({ onNavigate }) => {
                   <input
                     ref={chartFileInputRef}
                     type="file"
-                    accept="image/*,.pdf"
+                    accept=".pdf,.docx,.doc,image/*,.svg,.txt"
                     onChange={(e) => handleProcessChartFiles(e.target.files)}
                     className="hidden"
                   />
-                  <div className="w-9 h-9 rounded-xl bg-emerald-100 text-emerald-800 flex items-center justify-center mx-auto mb-1.5 shadow-2xs">
+                  <div className="w-10 h-10 rounded-xl bg-emerald-100 text-emerald-800 flex items-center justify-center mx-auto mb-2 shadow-2xs">
                     <FileImage className="w-5 h-5" />
                   </div>
                   <p className="font-bold text-stone-800 text-xs sm:text-sm">
-                    Upload poster image or PDF from computer
+                    Click to select or drag & drop PDF, DOCX, or Canva graphic
                   </p>
-                  <p className="text-[10px] text-stone-500 mt-0.5">
-                    Images will render in full high-resolution with direct print support.
+                  <p className="text-[10px] text-stone-500 mt-1">
+                    Supports .pdf, .png, .jpg, .webp, .docx, and vector files. Opens directly in the interactive PDF viewer!
                   </p>
                 </div>
 
                 {chartAttachments.length > 0 && (
-                  <div className="p-3 bg-stone-50 border border-stone-200 rounded-xl flex items-center justify-between gap-3">
-                    <div className="flex items-center gap-2">
-                      <img
-                        src={chartAttachments[0].dataUrl}
-                        alt="Preview"
-                        className="w-10 h-10 rounded object-cover border border-stone-300"
-                      />
-                      <div>
-                        <p className="text-xs font-bold text-stone-800">{chartAttachments[0].name}</p>
-                        <span className="text-[10px] text-stone-500">{chartAttachments[0].size}</span>
+                  <div className="p-3.5 bg-stone-50 border border-stone-200 rounded-xl flex items-center justify-between gap-3">
+                    <div className="flex items-center gap-3 min-w-0">
+                      {chartAttachments[0].type.startsWith('image/') ? (
+                        <img
+                          src={chartAttachments[0].dataUrl}
+                          alt="Preview"
+                          className="w-11 h-11 rounded-lg object-cover border border-stone-300 shrink-0"
+                        />
+                      ) : (
+                        <div className="w-11 h-11 rounded-lg bg-emerald-100 text-emerald-800 flex items-center justify-center shrink-0 border border-emerald-200">
+                          <FileText className="w-5 h-5" />
+                        </div>
+                      )}
+                      <div className="min-w-0">
+                        <p className="text-xs font-bold text-stone-800 truncate">{chartAttachments[0].name}</p>
+                        <div className="flex items-center gap-2 mt-0.5">
+                          <span className="text-[10px] text-stone-500 font-mono">{chartAttachments[0].size}</span>
+                          <span className="text-[9px] px-1.5 py-0.5 rounded bg-stone-200 text-stone-700 font-bold uppercase">
+                            {chartAttachments[0].type.includes('pdf') ? 'PDF' : chartAttachments[0].type.startsWith('image/') ? 'Graphic' : 'Doc'}
+                          </span>
+                        </div>
                       </div>
                     </div>
                     <button
                       type="button"
                       onClick={() => setChartAttachments([])}
-                      className="text-stone-400 hover:text-rose-600"
+                      className="p-1.5 text-stone-400 hover:text-rose-600 rounded-lg transition-colors cursor-pointer"
+                      title="Remove file"
                     >
                       <Trash2 className="w-4 h-4" />
                     </button>
                   </div>
                 )}
+
+                {/* Optional Canva Share Link */}
+                <div>
+                  <label className="block font-bold text-stone-800 mb-1">
+                    Canva Share Link / External URL (Optional)
+                  </label>
+                  <input
+                    type="url"
+                    placeholder="e.g., https://www.canva.com/design/..."
+                    value={chartExternalUrl}
+                    onChange={(e) => setChartExternalUrl(e.target.value)}
+                    className="w-full px-3.5 py-2 bg-stone-50 border border-stone-300 rounded-xl focus:ring-2 focus:ring-emerald-700 text-stone-900 focus:outline-none text-xs"
+                  />
+                  <p className="text-[10px] text-stone-400 mt-1">
+                    If provided, visitors can also click to open and view the high-resolution design in Canva.
+                  </p>
+                </div>
               </div>
 
               {/* Structured Sections Builder */}
@@ -1541,19 +1729,29 @@ export const AdminPage: React.FC<AdminPageProps> = ({ onNavigate }) => {
                 {uploadedCharts.map((chart) => (
                   <div
                     key={chart.id}
-                    className="p-3.5 rounded-2xl border border-stone-200 bg-stone-50/70 space-y-2 relative group hover:border-emerald-300 transition-colors"
+                    className="p-4 rounded-2xl border border-stone-200 bg-stone-50/80 space-y-2.5 relative group hover:border-emerald-300 transition-colors shadow-2xs"
                   >
                     <div className="flex items-start justify-between gap-2">
                       <div>
-                        <span className="text-[10px] font-bold uppercase tracking-wider text-emerald-800 block">
-                          {chart.category}
-                        </span>
-                        <h4 className="font-bold text-stone-900 text-sm">{chart.title}</h4>
+                        <div className="flex items-center gap-1.5 flex-wrap mb-1">
+                          <span className="px-2 py-0.5 rounded text-[10px] font-extrabold uppercase tracking-wider bg-emerald-100 text-emerald-800 border border-emerald-300">
+                            {chart.itemType || 'Poster'}
+                          </span>
+                          <span className="text-[10px] text-stone-500 font-semibold uppercase tracking-wider">
+                            • {chart.category}
+                          </span>
+                          {chart.fileType && (
+                            <span className="px-1.5 py-0.5 rounded text-[9px] font-bold uppercase bg-stone-200 text-stone-700">
+                              {chart.fileType === 'pdf' ? 'PDF' : chart.fileType === 'image' ? 'Image/Canva' : chart.fileType === 'docx' ? 'DOCX' : chart.fileType}
+                            </span>
+                          )}
+                        </div>
+                        <h4 className="font-bold text-stone-900 text-sm leading-snug">{chart.title}</h4>
                       </div>
                       <button
                         onClick={() => handleDeleteChart(chart.id)}
-                        className="p-1 text-stone-400 hover:text-rose-600 transition-colors cursor-pointer"
-                        title="Delete poster"
+                        className="p-1.5 text-stone-400 hover:text-rose-600 rounded-lg hover:bg-rose-50 transition-colors cursor-pointer shrink-0"
+                        title="Delete this material"
                       >
                         <Trash2 className="w-4 h-4" />
                       </button>
@@ -1563,13 +1761,50 @@ export const AdminPage: React.FC<AdminPageProps> = ({ onNavigate }) => {
                       {chart.description}
                     </p>
 
-                    <div className="flex items-center justify-between text-[10px] text-stone-400 pt-1 border-t border-stone-200/60">
-                      <span>{chart.sections?.length || 0} sections</span>
+                    {chart.fileName && (
+                      <p className="text-[11px] text-stone-500 flex items-center gap-1 font-mono truncate">
+                        <FileText className="w-3 h-3 text-stone-400 shrink-0" />
+                        <span className="truncate">{chart.fileName}</span>
+                        {chart.fileSize && <span className="text-stone-400 shrink-0">({chart.fileSize})</span>}
+                      </p>
+                    )}
+
+                    <div className="flex items-center justify-between gap-2 pt-2 border-t border-stone-200/80">
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setChartPreviewItem({
+                            id: chart.id,
+                            title: chart.title,
+                            subtitle: chart.subtitle || '',
+                            itemType: chart.itemType || 'Poster',
+                            category: chart.category,
+                            description: chart.description,
+                            fileType: chart.fileType,
+                            fileName: chart.fileName,
+                            fileSize: chart.fileSize,
+                            fileDataUrl: chart.fileDataUrl,
+                            imageUrl: chart.imageUrl,
+                            externalUrl: chart.externalUrl,
+                            sections: chart.sections as any,
+                            footerNote: chart.footerNote,
+                            authorEmail: chart.authorEmail,
+                            createdAt: chart.createdAt
+                          });
+                          setIsChartPreviewOpen(true);
+                        }}
+                        className="inline-flex items-center gap-1.5 text-[11px] font-bold text-emerald-800 bg-emerald-50 hover:bg-emerald-100 px-2.5 py-1.5 rounded-xl border border-emerald-200 transition-colors cursor-pointer"
+                      >
+                        <Eye className="w-3.5 h-3.5" />
+                        <span>Preview Viewer</span>
+                      </button>
+
                       <button
                         onClick={() => onNavigate('printables')}
-                        className="text-emerald-800 font-semibold hover:underline cursor-pointer"
+                        className="text-stone-600 hover:text-emerald-800 text-[11px] font-semibold hover:underline flex items-center gap-1 cursor-pointer"
                       >
-                        View Live →
+                        <span>View Live</span>
+                        <ArrowRight className="w-3 h-3" />
                       </button>
                     </div>
                   </div>
@@ -1755,6 +1990,15 @@ export const AdminPage: React.FC<AdminPageProps> = ({ onNavigate }) => {
           </div>
         </div>
       )}
+      {/* PDF & Document Modal Previewer for Admin */}
+      <PdfDocumentViewerModal
+        isOpen={isChartPreviewOpen}
+        onClose={() => {
+          setIsChartPreviewOpen(false);
+          setChartPreviewItem(null);
+        }}
+        item={chartPreviewItem}
+      />
     </div>
   );
 };

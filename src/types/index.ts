@@ -152,9 +152,15 @@ export interface AdminPrintableChart {
   id: string;
   title: string;
   subtitle?: string;
+  itemType?: string; // e.g. 'Poster', 'Notes', 'Chart', 'Infographic', 'Syllabus', etc.
   category: string;
   description: string;
+  fileType?: 'pdf' | 'image' | 'docx' | 'doc' | 'sheet' | 'interactive' | string;
+  fileName?: string;
+  fileSize?: string;
+  fileDataUrl?: string;
   imageUrl?: string;
+  externalUrl?: string;
   attachments?: NoteAttachment[];
   sections?: {
     heading: string;
