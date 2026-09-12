@@ -36,103 +36,11 @@ import {
   AlertTriangle
 } from 'lucide-react';
 
-const INITIAL_QUESTIONS: Question[] = [
-  {
-    id: 'q-seed-1',
-    title: 'How should prayer times be determined in high-latitude regions during polar summer?',
-    details: 'In Scandinavian and northern territories (like Tromsø or northern Canada), the sun does not set for weeks during summer, meaning astronomical twilight or true sunset does not occur for Maghrib and Isha. What are the principal scholarly references and council fatwas regarding estimation?',
-    category: 'Fiqh & Rulings',
-    tags: ['Salah', 'High Latitudes', 'Fiqh Council', 'Isha'],
-    authorId: 'scholarly-council',
-    authorName: 'Dr. Zaid Al-Qadi',
-    upvotes: 24,
-    commentsCount: 3,
-    createdAt: '2026-08-20T10:00:00Z'
-  },
-  {
-    id: 'q-seed-2',
-    title: 'Is it permissible to utilize AI-assisted translation for understanding Quranic grammar (I\'rab)?',
-    details: 'With recent advances in linguistic models, many students use AI to parse Arabic roots and Balaghah (rhetoric). What boundaries and cross-references against classical dictionaries (like Lisan al-Arab) are necessary to prevent theological errors?',
-    category: 'Contemporary & Ethics',
-    tags: ['Quran', 'Technology', 'Arabic Grammar', 'Ethics'],
-    authorId: 'student-bilal',
-    authorName: 'Bilal Farooq',
-    upvotes: 18,
-    commentsCount: 2,
-    createdAt: '2026-08-28T14:30:00Z'
-  },
-  {
-    id: 'q-seed-3',
-    title: 'Calculation of Zakat on Modern Retirement Accounts (401k / Pension Funds)',
-    details: 'What is the preferred methodology for calculating Zakat on employee-matched retirement accounts where early withdrawal incurs penalties? Should Zakat be paid on the gross vested amount annually or upon liquidation?',
-    category: 'Fiqh & Rulings',
-    tags: ['Zakat', 'Finance', 'Wealth', 'Pensions'],
-    authorId: 'user-fatima',
-    authorName: 'Fatima Zahra',
-    upvotes: 31,
-    commentsCount: 3,
-    createdAt: '2026-09-02T08:15:00Z'
-  }
-];
-
-const INITIAL_COMMENTS: Record<string, Comment[]> = {
-  'q-seed-1': [
-    {
-      id: 'c1',
-      questionId: 'q-seed-1',
-      text: 'The European Council for Fatwa and Research (ECFR) and the Islamic Fiqh Academy of Makkah addressed this directly. When normal astronomical signs disappear, Muslims are permitted to estimate (Taqdir) timings based on the nearest temperate latitude (typically 45° or 48° North), or anchor against the timings of Makkah al-Mukarramah.',
-      references: 'Reference: Sahih Muslim 2937 (Hadith of Dajjal: "Estimate for it its measure" / "Uqdurū lahu qadrah"); ECFR Resolution 3/19 (2009).',
-      stance: 'Scholarly Reference',
-      authorId: 'sheikh-amin',
-      authorName: 'Shaykh Aminullah',
-      upvotes: 19,
-      createdAt: '2026-08-20T12:30:00Z'
-    },
-    {
-      id: 'c2',
-      questionId: 'q-seed-1',
-      text: 'Practically, local mosques in Tromsø and Reykjavik adopt the Makkah schedule or the nearest city with distinguishable twilight (such as Oslo). It provides consistency for the entire congregational community.',
-      references: 'Fiqh al-Sunnah by Sayyid Sabiq, Vol. 1, Chapter on Timings in Polar Regions.',
-      stance: 'Perspective',
-      authorId: 'karim-nordic',
-      authorName: 'Karim Lindqvist',
-      upvotes: 8,
-      createdAt: '2026-08-21T09:15:00Z'
-    }
-  ],
-  'q-seed-2': [
-    {
-      id: 'c3',
-      questionId: 'q-seed-2',
-      text: 'Using tools for lexical lookup of root words (Jadh\'r) is permissible as a study aid, but no theological deduction (Istinbat) or novel Tafsir can be made through statistical models. Classical exegetes like At-Tabari, Al-Qurtubi, and Ibn Kathir must remain the authoritative benchmarks.',
-      references: 'Hadith: "Whoever speaks about the Quran without knowledge should take his seat in the Fire." (Sunan at-Tirmidhi 2950, Hasan).',
-      stance: 'Scholarly Reference',
-      authorId: 'ustadh-ahmed',
-      authorName: 'Ustadh Ahmed Siddiqui',
-      upvotes: 14,
-      createdAt: '2026-08-29T11:00:00Z'
-    }
-  ],
-  'q-seed-3': [
-    {
-      id: 'c4',
-      questionId: 'q-seed-3',
-      text: 'Prominent modern jurists (including Dr. Yusuf al-Qaradawi and the Fiqh Council of North America) suggest calculating Zakat strictly on the accessible portion: deducting the mandatory early withdrawal penalties and anticipated tax liabilities, then paying 2.5% on the net accessible liquid amount if above Nisab.',
-      references: 'Fiqh az-Zakat by Dr. Yusuf al-Qaradawi, Chapter on Modern Incorporeal Wealth; AAOIFI Shari\'ah Standard No. 35.',
-      stance: 'Scholarly Reference',
-      authorId: 'scholar-hamza',
-      authorName: 'Mufti Hamza Tariq',
-      upvotes: 22,
-      createdAt: '2026-09-02T10:45:00Z'
-    }
-  ]
-};
-
 export const CommunityQAPage: React.FC = () => {
   const { user, isAdmin } = useAuth();
-  const [questions, setQuestions] = useState<Question[]>(INITIAL_QUESTIONS);
+  const [questions, setQuestions] = useState<Question[]>([]);
   const [activeQuestion, setActiveQuestion] = useState<Question | null>(null);
-  const [commentsMap, setCommentsMap] = useState<Record<string, Comment[]>>(INITIAL_COMMENTS);
+  const [commentsMap, setCommentsMap] = useState<Record<string, Comment[]>>({});
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedCategory, setSelectedCategory] = useState('All');
   const [showSpamQueueOnly, setShowSpamQueueOnly] = useState(false);
@@ -185,27 +93,27 @@ export const CommunityQAPage: React.FC = () => {
       const unsubscribe = onSnapshot(
         qCol,
         (snapshot) => {
-          if (!snapshot.empty) {
-            const list: Question[] = [];
-            snapshot.forEach((docSnap) => {
-              const data = docSnap.data();
-              list.push({
-                id: docSnap.id,
-                ...(data as any),
-                spamCount: typeof data.spamCount === 'number' ? data.spamCount : 0
-              });
+          const list: Question[] = [];
+          snapshot.forEach((docSnap) => {
+            const data = docSnap.data();
+            list.push({
+              id: docSnap.id,
+              title: data.title || '',
+              details: data.details || data.content || '',
+              category: data.category || 'Fiqh & Rulings',
+              tags: Array.isArray(data.tags) ? data.tags : [],
+              authorId: data.authorId || 'community-guest',
+              authorName: data.authorName || 'Community Seeker',
+              authorPhoto: data.authorPhoto || undefined,
+              upvotes: typeof data.upvotes === 'number' ? data.upvotes : 0,
+              commentsCount: typeof data.commentsCount === 'number' ? data.commentsCount : 0,
+              spamCount: typeof data.spamCount === 'number' ? data.spamCount : 0,
+              createdAt: data.createdAt || new Date().toISOString()
             });
-            // Combine with initial if needed
-            setQuestions((prev) => {
-              const combined = [...list];
-              INITIAL_QUESTIONS.forEach(init => {
-                if (!combined.some(c => c.id === init.id)) {
-                  combined.push(init);
-                }
-              });
-              return combined;
-            });
-          }
+          });
+          // Newest first
+          list.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+          setQuestions(list);
         },
         (err) => {
           console.warn('Firestore questions live sync note:', err.message);
@@ -216,6 +124,44 @@ export const CommunityQAPage: React.FC = () => {
       console.warn('Questions subscription note:', e);
     }
   }, []);
+
+  // Listen to Firestore comments in real-time when activeQuestion changes
+  useEffect(() => {
+    if (!activeQuestion) return;
+    try {
+      const commentsCol = collection(db, 'questions', activeQuestion.id, 'comments');
+      const unsubscribe = onSnapshot(
+        commentsCol,
+        (snapshot) => {
+          const list: Comment[] = [];
+          snapshot.forEach((docSnap) => {
+            const data = docSnap.data();
+            list.push({
+              id: docSnap.id,
+              questionId: activeQuestion.id,
+              text: data.text || '',
+              references: data.references || undefined,
+              stance: data.stance || 'Scholarly Reference',
+              authorId: data.authorId || 'community-guest',
+              authorName: data.authorName || 'Community Contributor',
+              authorPhoto: data.authorPhoto || undefined,
+              upvotes: typeof data.upvotes === 'number' ? data.upvotes : 0,
+              spamCount: typeof data.spamCount === 'number' ? data.spamCount : 0,
+              createdAt: data.createdAt || new Date().toISOString()
+            });
+          });
+          list.sort((a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime());
+          setCommentsMap((prev) => ({ ...prev, [activeQuestion.id]: list }));
+        },
+        (err) => {
+          console.warn('Comments listener note:', err);
+        }
+      );
+      return () => unsubscribe();
+    } catch (e) {
+      console.warn('Comments listener error:', e);
+    }
+  }, [activeQuestion?.id]);
 
   const handleOpenAskModal = () => {
     // Open immediately for everyone without sign-up barrier
@@ -295,14 +241,18 @@ export const CommunityQAPage: React.FC = () => {
 
     try {
       await addDoc(collection(db, 'questions', activeQuestion.id, 'comments'), newC);
+      try {
+        await updateDoc(doc(db, 'questions', activeQuestion.id), {
+          commentsCount: increment(1)
+        });
+      } catch {}
     } catch (err) {
       // Local update fallback
+      setCommentsMap(prev => {
+        const existing = prev[activeQuestion.id] || [];
+        return { ...prev, [activeQuestion.id]: [...existing, newC] };
+      });
     }
-
-    setCommentsMap(prev => {
-      const existing = prev[activeQuestion.id] || [];
-      return { ...prev, [activeQuestion.id]: [...existing, newC] };
-    });
 
     setQuestions(prev =>
       prev.map(q => q.id === activeQuestion.id ? { ...q, commentsCount: q.commentsCount + 1 } : q)
@@ -354,6 +304,13 @@ export const CommunityQAPage: React.FC = () => {
     } else {
       // Flag a comment
       if (activeQuestion) {
+        try {
+          await updateDoc(doc(db, 'questions', activeQuestion.id, 'comments', id), {
+            spamCount: increment(1)
+          });
+        } catch (err) {
+          console.warn('Firestore comment spam count note:', err);
+        }
         setCommentsMap(prev => {
           const list = prev[activeQuestion.id] || [];
           const nextList = list.map(c => c.id === id ? { ...c, spamCount: (c.spamCount || 0) + 1 } : c);
@@ -401,7 +358,14 @@ export const CommunityQAPage: React.FC = () => {
     setTimeout(() => setSpamAlertNotice(null), 3500);
   };
 
-  const handleUpvoteQuestion = (qId: string) => {
+  const handleUpvoteQuestion = async (qId: string) => {
+    try {
+      await updateDoc(doc(db, 'questions', qId), {
+        upvotes: increment(1)
+      });
+    } catch (e) {
+      console.warn('Firestore upvote note:', e);
+    }
     setQuestions(prev =>
       prev.map(q => q.id === qId ? { ...q, upvotes: q.upvotes + 1 } : q)
     );
@@ -410,8 +374,15 @@ export const CommunityQAPage: React.FC = () => {
     }
   };
 
-  const handleUpvoteComment = (commentId: string) => {
+  const handleUpvoteComment = async (commentId: string) => {
     if (!activeQuestion) return;
+    try {
+      await updateDoc(doc(db, 'questions', activeQuestion.id, 'comments', commentId), {
+        upvotes: increment(1)
+      });
+    } catch (e) {
+      console.warn('Firestore comment upvote note:', e);
+    }
     setCommentsMap(prev => {
       const qComments = prev[activeQuestion.id] || [];
       const updated = qComments.map(c => c.id === commentId ? { ...c, upvotes: c.upvotes + 1 } : c);
@@ -562,26 +533,42 @@ export const CommunityQAPage: React.FC = () => {
           {/* Question Cards Feed */}
           <div className="space-y-4">
             {filteredQuestions.length === 0 ? (
-              <div className="bg-white rounded-2xl p-12 border border-stone-200 text-center space-y-3">
-                <div className="w-12 h-12 rounded-full bg-stone-100 text-stone-400 flex items-center justify-center mx-auto">
-                  {showSpamQueueOnly ? <ShieldCheck className="w-6 h-6 text-emerald-600" /> : <Search className="w-6 h-6" />}
+              <div className="bg-white rounded-2xl p-12 border border-stone-200 text-center space-y-4">
+                <div className="w-14 h-14 rounded-2xl bg-emerald-50 text-emerald-800 flex items-center justify-center mx-auto">
+                  {showSpamQueueOnly ? <ShieldCheck className="w-7 h-7 text-emerald-700" /> : <MessageSquareQuote className="w-7 h-7 text-emerald-800" />}
                 </div>
-                <h3 className="font-bold text-stone-800 text-base">
-                  {showSpamQueueOnly ? 'No Messages Exceed 5 Spam Reports' : 'No Discussions Found'}
-                </h3>
-                <p className="text-xs text-stone-500 max-w-sm mx-auto">
-                  {showSpamQueueOnly
-                    ? 'The forum is clean! No messages currently have 5 or more community spam flags.'
-                    : 'Try modifying your search filter or be the first to ask a question!'}
-                </p>
-                {showSpamQueueOnly && (
+                <div>
+                  <h3 className="font-bold text-stone-900 text-lg">
+                    {showSpamQueueOnly
+                      ? 'No Messages Exceed 5 Spam Reports'
+                      : questions.length === 0
+                      ? 'No Community Discussions Posted Yet'
+                      : 'No Matching Discussions Found'}
+                  </h3>
+                  <p className="text-xs sm:text-sm text-stone-500 max-w-md mx-auto mt-1.5 leading-relaxed">
+                    {showSpamQueueOnly
+                      ? 'The forum is clean! No messages currently have 5 or more community spam flags.'
+                      : questions.length === 0
+                      ? 'Have a question about Fiqh rulings, Quranic studies, prayer times, or Islamic ethics? Be the first to start an authentic community discussion!'
+                      : `No discussions found matching "${searchQuery}". Try selecting a different category or search term.`}
+                  </p>
+                </div>
+                {showSpamQueueOnly ? (
                   <button
                     onClick={() => setShowSpamQueueOnly(false)}
-                    className="mt-2 px-4 py-2 bg-emerald-800 hover:bg-emerald-900 text-white rounded-xl text-xs font-bold"
+                    className="mt-2 px-5 py-2.5 bg-emerald-800 hover:bg-emerald-900 text-white rounded-xl text-xs font-bold transition-colors cursor-pointer"
                   >
                     Return to All Questions
                   </button>
-                )}
+                ) : questions.length === 0 ? (
+                  <button
+                    onClick={handleOpenAskModal}
+                    className="inline-flex items-center gap-2 px-5 py-2.5 bg-emerald-800 hover:bg-emerald-900 text-white rounded-xl text-xs sm:text-sm font-bold shadow-xs transition-colors cursor-pointer"
+                  >
+                    <PlusCircle className="w-4 h-4" />
+                    <span>Ask the First Question</span>
+                  </button>
+                ) : null}
               </div>
             ) : (
               filteredQuestions.map((q) => {

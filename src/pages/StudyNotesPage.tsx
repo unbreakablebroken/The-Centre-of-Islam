@@ -28,128 +28,12 @@ interface StudyNotesPageProps {
   onNavigate?: (page: string) => void;
 }
 
-// Built-in foundational notes to ensure the page is rich and authoritative out of the box
-const DEFAULT_NOTES: GeneralNoteItem[] = [
-  {
-    id: 'default-1',
-    title: 'The Sciences of the Noble Quran: Revelation, Compilation & Preservation',
-    category: 'Quran & Tafsir',
-    description: 'Comprehensive study of Wahy (divine revelation), the chronological stages of Quranic compilation during the Prophet’s era and Caliphate, and textual preservation principles.',
-    content: `The Quran was revealed to Prophet Muhammad (peace be upon him) over a span of approximately 23 years (610 CE – 632 CE).
-
-1. Stages of Revelation:
-- From Al-Lawh al-Mahfuz (The Preserved Tablet) to Bayt al-Izzah in the lowest heaven on Laylat al-Qadr.
-- Gradually revealed through angel Jibreel according to circumstances, rulings, and spiritual guidance.
-
-2. Preservation During Prophetic Era:
-- Primary method: Memorization by hundreds of companions (Huffadh).
-- Secondary method: Written compilation on parchments, shoulder blades, date-palm stalks, and flat stones under the direct supervision of the Prophet (pbuh).
-
-3. Caliph Abu Bakr's Compilation:
-- Triggered by the Battle of Yamama where numerous memorizers were martyred.
-- Assigned to Zayd ibn Thabit (ra) who enforced strict criteria: each verse required confirmation by two independent eyewitnesses with written records.
-
-4. Caliph Uthman's Standardization:
-- Dialectical variations in recitation across the expanding empire prompted standardizing the Qurayshi dialect master copies (Mushaf Uthmani) and dispatching them to major Islamic provinces.`,
-    keyPoints: [
-      'Revelation occurred over 23 years in both Makkan (theology, monotheism) and Madinan (law, society) periods.',
-      'Zayd ibn Thabit required dual verification (memory and written testimony) for the first standardized collection.',
-      'The Uthmanic codex united the Ummah upon a single universally accepted orthographic transmission.'
-    ],
-    importantTerms: [
-      { term: 'Wahy', definition: 'Divine revelation communicated by Allah to His prophets directly or via angel Jibreel.' },
-      { term: 'Mushaf Uthmani', definition: 'The authoritative master codex compiled under Caliph Uthman (ra) to unify recitation.' },
-      { term: 'Mutawatir', definition: 'A text or tradition reported by such a vast number of narrators in every generation that collusion upon falsehood is impossible.' }
-    ],
-    sampleQuestions: [
-      {
-        question: 'Explain why the compilation of the Quran was initiated under Caliph Abu Bakr (ra) and standardized under Caliph Uthman (ra).',
-        marks: 8,
-        modelAnswer: 'Under Abu Bakr, Umar (ra) feared the loss of the Quran after the martyrdom of many Huffadh at the Battle of Yamama. Under Uthman, regional variations in dialect caused disputes among soldiers in Armenia and Azerbaijan, prompting a standardized vocalic and consonantal text.'
-      }
-    ],
-    authorEmail: 'curriculum@the-centre-of-islam.vercel.app',
-    createdAt: '2026-03-01T00:00:00.000Z'
-  },
-  {
-    id: 'default-2',
-    title: 'The Principles of Hadith Authentication (Mustalah al-Hadith)',
-    category: 'Hadith & Sunnah',
-    description: 'The rigorous scholarly methodology developed by traditional muhaddithin to verify prophetic narrations via Isnad (chain of transmission) and Matn (textual analysis).',
-    content: `Mustalah al-Hadith represents the world's most meticulous historiographical methodology.
-
-Every Hadith comprises two essential components:
-1. Isnad (Sanad): The chronological chain of transmitters tracing back to the Messenger of Allah (pbuh).
-2. Matn: The actual text, speech, action, or tacit approval (Taqrir).
-
-The 5 Conditions of a Sahih (Authentic) Hadith:
-1. Ittisal al-Sanad (Continuous unbroken chain of reliable narrators).
-2. Adalah al-Ruwat (Moral integrity, piety, and upright character of every narrator).
-3. Dabt al-Ruwat (Precision, memory, and cognitive competence of every narrator).
-4. Khuluw min al-Shudhudh (Absence of irregularity or contradiction with higher-weight transmitters).
-5. Khuluw min al-Illah (Freedom from subtle hidden defects).`,
-    keyPoints: [
-      'A narration must pass all five strict criteria to be classified as Sahih.',
-      'Biographical evaluation (Ilm al-Rijal) scrutinized the personal integrity and memory of every narrator.',
-      'Any break in the transmission chain automatically disqualifies a Hadith from primary Sahih status.'
-    ],
-    importantTerms: [
-      { term: 'Isnad', definition: 'The verified chain of human transmitters conveying a tradition from person to person.' },
-      { term: 'Matn', definition: 'The actual substantive text of the prophetic narration.' },
-      { term: 'Ilm al-Rijal', definition: 'The science of biographical evaluation of narrators to assess trustworthiness and accuracy.' }
-    ],
-    sampleQuestions: [
-      {
-        question: 'List and define the five conditions required for a hadith to be considered Sahih.',
-        marks: 6,
-        modelAnswer: '1. Continuous chain (Ittisal), 2. Character integrity (Adalah), 3. Retention/precision (Dabt), 4. No anomalies against established narrations (No Shudhudh), 5. Absence of obscure defects (No Illah).'
-      }
-    ],
-    authorEmail: 'curriculum@the-centre-of-islam.vercel.app',
-    createdAt: '2026-03-02T00:00:00.000Z'
-  },
-  {
-    id: 'default-3',
-    title: 'Sources of Islamic Jurisprudence (Usul al-Fiqh)',
-    category: 'Fiqh & Worship',
-    description: 'An analytical review of the primary and secondary sources of Islamic law, including Quran, Sunnah, Ijma (consensus), and Qiyas (analogical deduction).',
-    content: `Usul al-Fiqh provides the foundational principles and legal philosophy for deducing practical Islamic rulings (Shar'i ahkam) from textual sources.
-
-Primary Sources (Agreed Upon by All Orthodox Scholars):
-1. The Holy Quran: The definitive, verbatim word of Allah.
-2. The Prophetic Sunnah: Practical demonstration, verbal commands, and legislative details.
-
-Secondary Sources (Systematic Methodological Tools):
-3. Ijma (Consensus): The unanimous agreement of qualified mujtahid scholars in a specific era following the demise of the Prophet upon a religious issue.
-4. Qiyas (Analogical Deduction): Extending a known legal ruling (Hukm) from an original case (Asl) to a new case (Far') based on a shared effective cause ('Illah).`,
-    keyPoints: [
-      'Quran and Sunnah serve as primary revelation; Ijma and Qiyas extract rulings for novel developments.',
-      'The effective cause (\'Illah) is the cornerstone of analogical deduction.',
-      'Objectives of Islamic Law (Maqasid al-Shariah) prioritize safeguarding Faith, Life, Intellect, Lineage, and Wealth.'
-    ],
-    importantTerms: [
-      { term: 'Mujtahid', definition: 'An advanced jurist capable of deducing authentic legal rulings directly from source texts.' },
-      { term: 'Qiyas', definition: 'Analogical deduction connecting a new question with an existing ruling based on shared underlying cause.' },
-      { term: 'Illah', definition: 'The precise underlying rationale or effective cause behind a specific Divine ruling.' }
-    ],
-    sampleQuestions: [
-      {
-        question: 'Identify the four components of Qiyas and illustrate with an example.',
-        marks: 5,
-        modelAnswer: 'The 4 components are: 1. Asl (original case - wine), 2. Far\' (new case - modern narcotic), 3. Hukm (ruling - prohibition), 4. \'Illah (shared cause - intoxication and clouding of intellect).'
-      }
-    ],
-    authorEmail: 'curriculum@the-centre-of-islam.vercel.app',
-    createdAt: '2026-03-03T00:00:00.000Z'
-  }
-];
-
 export const StudyNotesPage: React.FC<StudyNotesPageProps> = ({ onNavigate }) => {
   const { isAdmin } = useAuth();
   const [selectedCategory, setSelectedCategory] = useState<string>('All');
   const [searchQuery, setSearchQuery] = useState('');
   const [expandedQuestions, setExpandedQuestions] = useState<Record<string, boolean>>({});
-  const [allNotes, setAllNotes] = useState<GeneralNoteItem[]>(DEFAULT_NOTES);
+  const [allNotes, setAllNotes] = useState<GeneralNoteItem[]>([]);
   const [loading, setLoading] = useState(false);
 
   // Fetch admin uploaded notes from Firestore
@@ -228,9 +112,7 @@ export const StudyNotesPage: React.FC<StudyNotesPageProps> = ({ onNavigate }) =>
           });
         } catch {}
 
-        if (customNotes.length > 0) {
-          setAllNotes([...customNotes, ...DEFAULT_NOTES]);
-        }
+        setAllNotes(customNotes);
       } catch (err) {
         console.warn('Error fetching notes:', err);
       } finally {
@@ -362,7 +244,33 @@ export const StudyNotesPage: React.FC<StudyNotesPageProps> = ({ onNavigate }) =>
       </div>
 
       {/* Notes List */}
-      {filteredNotes.length === 0 ? (
+      {loading ? (
+        <div className="bg-white rounded-3xl p-12 text-center border border-stone-200 shadow-xs space-y-3">
+          <div className="w-8 h-8 border-3 border-emerald-800 border-t-transparent rounded-full animate-spin mx-auto" />
+          <p className="text-xs text-stone-500 font-medium">Loading authentic study notes...</p>
+        </div>
+      ) : allNotes.length === 0 ? (
+        <div className="bg-white rounded-3xl p-12 text-center border border-stone-200 shadow-xs space-y-4">
+          <div className="w-14 h-14 rounded-2xl bg-emerald-50 text-emerald-800 flex items-center justify-center mx-auto">
+            <BookOpen className="w-7 h-7 text-emerald-800" />
+          </div>
+          <div>
+            <h3 className="font-bold text-stone-900 text-lg sm:text-xl">No study notes published yet</h3>
+            <p className="text-xs sm:text-sm text-stone-600 max-w-md mx-auto mt-1.5 leading-relaxed">
+              Curriculum notes, study guides, and syllabus materials uploaded by the administrator will appear here with downloadable attachments and model answers.
+            </p>
+          </div>
+          {isAdmin && onNavigate && (
+            <button
+              onClick={() => onNavigate('admin')}
+              className="inline-flex items-center gap-2 px-5 py-2.5 bg-emerald-800 hover:bg-emerald-900 text-white text-xs sm:text-sm font-bold rounded-xl transition-colors cursor-pointer shadow-xs"
+            >
+              <ShieldCheck className="w-4 h-4" />
+              <span>Create Notes in Admin Portal</span>
+            </button>
+          )}
+        </div>
+      ) : filteredNotes.length === 0 ? (
         <div className="bg-white rounded-3xl p-12 text-center border border-stone-200 shadow-xs space-y-3">
           <BookOpen className="w-10 h-10 text-stone-400 mx-auto" />
           <h3 className="font-bold text-stone-800 text-lg">No notes found</h3>

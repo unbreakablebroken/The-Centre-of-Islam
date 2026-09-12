@@ -376,7 +376,7 @@ export const AdminPage: React.FC<AdminPageProps> = ({ onNavigate }) => {
         importantTerms: JSON.stringify(activeTerms),
         sampleQuestions: JSON.stringify(activeQuestions),
         attachments: JSON.stringify(noteAttachments),
-        authorEmail: user?.email || 'admin@the-centre-of-islam.vercel.app',
+        authorEmail: user?.email || 'Administrator',
         authorSource: noteAuthorSource.trim(),
         createdAt: new Date().toISOString()
       };
@@ -395,7 +395,7 @@ export const AdminPage: React.FC<AdminPageProps> = ({ onNavigate }) => {
           keyPoints: JSON.stringify(activeKeyPoints),
           importantTerms: JSON.stringify(activeTerms),
           sampleQuestions: JSON.stringify(activeQuestions),
-          authorEmail: user?.email || 'admin@the-centre-of-islam.vercel.app',
+          authorEmail: user?.email || 'Administrator',
           createdAt: new Date().toISOString()
         });
       } catch {}
@@ -440,7 +440,7 @@ export const AdminPage: React.FC<AdminPageProps> = ({ onNavigate }) => {
         attachments: JSON.stringify(chartAttachments),
         imageUrl: chartAttachments[0]?.dataUrl || '',
         footerNote: chartFooter.trim() || 'Centre of Islam • Authentic Guidance and Verified References',
-        authorEmail: user?.email || 'admin@the-centre-of-islam.vercel.app',
+        authorEmail: user?.email || 'Administrator',
         createdAt: new Date().toISOString()
       };
 
