@@ -22,7 +22,8 @@ import {
   Home,
   Sparkles,
   HeartHandshake,
-  Lock
+  Lock,
+  Coins
 } from 'lucide-react';
 import { getHijriDate } from '../utils/prayerTimes';
 
@@ -46,6 +47,7 @@ export const Navbar: React.FC<NavbarProps> = ({ activePage, onNavigate, onOpenAu
   const navItems: { id: PageId; label: string; icon: React.ReactNode; badge?: string }[] = [
     { id: 'home', label: 'Home', icon: <Home className="w-4 h-4" /> },
     { id: 'quran', label: 'Online Quran', icon: <BookOpen className="w-4 h-4" /> },
+    { id: 'zakat-calculator', label: 'Zakat Calculator', icon: <Coins className="w-4 h-4" /> },
     { id: 'calendar', label: 'Calendar', icon: <CalendarIcon className="w-4 h-4" /> },
     { id: 'hadith', label: 'Hadith', icon: <Scroll className="w-4 h-4" /> },
     { id: 'daily-quotes', label: 'Daily Quotes', icon: <Quote className="w-4 h-4" /> },

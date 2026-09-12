@@ -2,6 +2,7 @@ export type PageId =
   | 'home'
   | 'quran'
   | 'calendar'
+  | 'zakat-calculator'
   | 'hadith'
   | 'daily-quotes'
   | 'printables'

@@ -17,7 +17,8 @@ import {
   Users, 
   BookMarked,
   FileText,
-  HeartHandshake
+  HeartHandshake,
+  Coins
 } from 'lucide-react';
 import { DAILY_QUOTES } from '../data/quotesData';
 import { HADITH_COLLECTION } from '../data/hadithData';
@@ -37,6 +38,13 @@ export const HomePage: React.FC<HomePageProps> = ({ onNavigate }) => {
       desc: 'Complete 114 Surahs with authentic Arabic Uthmani script, English translation, and audio recitation.',
       icon: <BookOpen className="w-5 h-5 text-emerald-700" />,
       tag: '114 Surahs'
+    },
+    {
+      id: 'zakat-calculator' as PageId,
+      title: 'Zakat Calculator',
+      desc: 'Calculate your annual 2.5% Zakat on gold, cash, investments, and business wealth with multi-currency Nisab standards.',
+      icon: <Coins className="w-5 h-5 text-emerald-700" />,
+      tag: 'Quran & Sunnah'
     },
     {
       id: 'calendar' as PageId,

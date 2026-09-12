@@ -54,6 +54,11 @@ export const Footer: React.FC<FooterProps> = ({ onNavigate }) => {
                 </button>
               </li>
               <li>
+                <button onClick={() => onNavigate('zakat-calculator')} className="hover:text-white transition-colors">
+                  Zakat Calculator (2.5%)
+                </button>
+              </li>
+              <li>
                 <button onClick={() => onNavigate('calendar')} className="hover:text-white transition-colors">
                   Islamic Hijri Calendar
                 </button>
