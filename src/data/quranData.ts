@@ -180,6 +180,7 @@ export interface QuranReciter {
   name: string;
   arabicName: string;
   folder: string;
+  fullSurahBaseUrl?: string;
   style: 'Murattal' | 'Mujawwad';
   origin: string;
   description: string;
@@ -191,6 +192,7 @@ export const QURAN_RECITERS: QuranReciter[] = [
     name: 'Mishary Rashid Alafasy',
     arabicName: 'مشاري راشد العفاسي',
     folder: 'Alafasy_128kbps',
+    fullSurahBaseUrl: 'https://server8.mp3quran.net/afs',
     style: 'Murattal',
     origin: 'Kuwait',
     description: 'Beloved melodious, crystal-clear recitation'
@@ -200,6 +202,7 @@ export const QURAN_RECITERS: QuranReciter[] = [
     name: 'Abdul Basit Abdul Samad (Murattal)',
     arabicName: 'عبد الباسط عبد الصمد - مرتل',
     folder: 'Abdul_Basit_Murattal_64kbps',
+    fullSurahBaseUrl: 'https://server7.mp3quran.net/basit',
     style: 'Murattal',
     origin: 'Egypt',
     description: 'The Golden Throat, timeless classical Egyptian master'
@@ -218,6 +221,7 @@ export const QURAN_RECITERS: QuranReciter[] = [
     name: 'Mahmoud Khalil Al-Husary',
     arabicName: 'محمود خليل الحصري',
     folder: 'Husary_128kbps',
+    fullSurahBaseUrl: 'https://server13.mp3quran.net/husr',
     style: 'Murattal',
     origin: 'Egypt',
     description: 'The Master Teacher of Tajweed and perfect articulation'
@@ -227,6 +231,7 @@ export const QURAN_RECITERS: QuranReciter[] = [
     name: 'Mohamed Siddiq El-Minshawi (Murattal)',
     arabicName: 'محمد صديق المنشاوي - مرتل',
     folder: 'Minshawy_Murattal_128kbps',
+    fullSurahBaseUrl: 'https://server10.mp3quran.net/minsh',
     style: 'Murattal',
     origin: 'Egypt',
     description: 'The Weeping Voice, profoundly touching and emotional'
@@ -245,6 +250,7 @@ export const QURAN_RECITERS: QuranReciter[] = [
     name: 'Maher Al-Muaiqly',
     arabicName: 'ماهر المعيقلي',
     folder: 'Maher_AlMuaiqly_64kbps',
+    fullSurahBaseUrl: 'https://server12.mp3quran.net/maher',
     style: 'Murattal',
     origin: 'Masjid al-Haram, Makkah',
     description: 'Distinguished Imam of the Grand Mosque in Makkah'
@@ -254,6 +260,7 @@ export const QURAN_RECITERS: QuranReciter[] = [
     name: 'Abdur-Rahman As-Sudais',
     arabicName: 'عبد الرحمن السديس',
     folder: 'Abdurrahmaan_As-Sudais_192kbps',
+    fullSurahBaseUrl: 'https://server11.mp3quran.net/sds',
     style: 'Murattal',
     origin: 'Masjid al-Haram, Makkah',
     description: 'Chief Imam of the Grand Mosque in Makkah, moving & spirited'
@@ -263,6 +270,7 @@ export const QURAN_RECITERS: QuranReciter[] = [
     name: 'Saud Ash-Shuraim',
     arabicName: 'سعود الشريم',
     folder: 'Saood_ash-Shuraym_128kbps',
+    fullSurahBaseUrl: 'https://server7.mp3quran.net/shur',
     style: 'Murattal',
     origin: 'Masjid al-Haram, Makkah',
     description: 'Legendary former Imam of Masjid al-Haram, rich & rhythmic'
@@ -272,6 +280,7 @@ export const QURAN_RECITERS: QuranReciter[] = [
     name: 'Saad Al-Ghamdi',
     arabicName: 'سعد الغامدي',
     folder: 'Ghamadi_40kbps',
+    fullSurahBaseUrl: 'https://server7.mp3quran.net/s_gmd',
     style: 'Murattal',
     origin: 'Saudi Arabia',
     description: 'Warm, gentle, and rhythmic flowing recitation'
@@ -281,6 +290,7 @@ export const QURAN_RECITERS: QuranReciter[] = [
     name: 'Abu Bakr Al-Shatri',
     arabicName: 'أبو بكر الشاطري',
     folder: 'Abu_Bakr_Ash-Shaatree_128kbps',
+    fullSurahBaseUrl: 'https://server11.mp3quran.net/shatri',
     style: 'Murattal',
     origin: 'Saudi Arabia / Yemen',
     description: 'Deep, powerful baritone resonance and deliberate pace'
@@ -290,6 +300,7 @@ export const QURAN_RECITERS: QuranReciter[] = [
     name: 'Yasser Ad-Dussary',
     arabicName: 'ياسر الدوسري',
     folder: 'Yasser_Ad-Dussary_128kbps',
+    fullSurahBaseUrl: 'https://server11.mp3quran.net/yasser',
     style: 'Murattal',
     origin: 'Masjid al-Haram, Makkah',
     description: 'Imam of Masjid al-Haram, stirring and soulful emotional depth'
@@ -299,6 +310,7 @@ export const QURAN_RECITERS: QuranReciter[] = [
     name: 'Nasser Al-Qatami',
     arabicName: 'ناصر القطامي',
     folder: 'Nasser_Alqatami_128kbps',
+    fullSurahBaseUrl: 'https://server6.mp3quran.net/qtm',
     style: 'Murattal',
     origin: 'Riyadh, Saudi Arabia',
     description: 'Tender, calm, and deeply meditative recitation'
@@ -308,6 +320,7 @@ export const QURAN_RECITERS: QuranReciter[] = [
     name: 'Ali Jaber',
     arabicName: 'علي جابر',
     folder: 'Ali_Jaber_64kbps',
+    fullSurahBaseUrl: 'https://server11.mp3quran.net/a_jbr',
     style: 'Murattal',
     origin: 'Masjid al-Haram, Makkah',
     description: 'Late beloved Imam of Masjid al-Haram, world-renowned voice'
