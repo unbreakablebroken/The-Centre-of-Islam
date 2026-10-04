@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { PageId } from '../types';
 import { useAuth } from '../context/AuthContext';
+import { useTheme } from '../context/ThemeContext';
 import { 
   BookOpen, 
   Calendar as CalendarIcon, 
@@ -24,7 +25,9 @@ import {
   HeartHandshake,
   Lock,
   Coins,
-  Layers
+  Layers,
+  Sun,
+  Moon
 } from 'lucide-react';
 import { getHijriDate } from '../utils/prayerTimes';
 
@@ -36,6 +39,7 @@ interface NavbarProps {
 
 export const Navbar: React.FC<NavbarProps> = ({ activePage, onNavigate, onOpenAuth }) => {
   const { user, logout, isAdmin } = useAuth();
+  const { isDark, toggleTheme } = useTheme();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [hijriStr, setHijriStr] = useState('');
 
@@ -69,9 +73,9 @@ export const Navbar: React.FC<NavbarProps> = ({ activePage, onNavigate, onOpenAu
   };
 
   return (
-    <header className="sticky top-0 z-40 bg-white/95 backdrop-blur-md border-b border-stone-200 shadow-xs">
+    <header className="sticky top-0 z-40 bg-white/95 dark:bg-stone-900/95 backdrop-blur-md border-b border-stone-200 dark:border-stone-800 shadow-xs transition-colors duration-200">
       {/* Top Banner with Hijri Date & Bismillah */}
-      <div className="bg-emerald-950 text-emerald-100 text-xs px-4 py-1.5 flex items-center justify-between gap-3">
+      <div className="bg-emerald-950 dark:bg-stone-950 text-emerald-100 text-xs px-4 py-1.5 flex items-center justify-between gap-3 border-b border-emerald-900/40 dark:border-stone-800">
         <div className="flex items-center gap-2 font-medium text-amber-300">
           <span className="w-2 h-2 rounded-full bg-amber-400 animate-pulse"></span>
           <span>{hijriStr || '1448 AH'}</span>
@@ -118,10 +122,10 @@ export const Navbar: React.FC<NavbarProps> = ({ activePage, onNavigate, onOpenAu
               referrerPolicy="no-referrer"
             />
             <div className="flex flex-col justify-center">
-              <span className="text-lg sm:text-xl font-extrabold tracking-tight text-stone-900 leading-tight whitespace-nowrap">
+              <span className="text-lg sm:text-xl font-extrabold tracking-tight text-stone-900 dark:text-stone-100 leading-tight whitespace-nowrap">
                 Centre of Islam
               </span>
-              <span className="text-[10px] sm:text-[11px] text-emerald-800 font-semibold tracking-wider uppercase leading-none whitespace-nowrap mt-0.5">
+              <span className="text-[10px] sm:text-[11px] text-emerald-800 dark:text-emerald-400 font-semibold tracking-wider uppercase leading-none whitespace-nowrap mt-0.5">
                 Authentic Knowledge & Guidance
               </span>
             </div>
@@ -138,8 +142,8 @@ export const Navbar: React.FC<NavbarProps> = ({ activePage, onNavigate, onOpenAu
                   onClick={() => handleNavClick(item.id)}
                   className={`px-2.5 py-1.5 rounded-lg text-xs font-semibold flex items-center gap-1.5 transition-all whitespace-nowrap shrink-0 ${
                     isActive
-                      ? 'bg-emerald-800 text-white shadow-xs'
-                      : 'text-stone-700 hover:text-emerald-900 hover:bg-stone-100'
+                      ? 'bg-emerald-800 dark:bg-emerald-700 text-white shadow-xs'
+                      : 'text-stone-700 dark:text-stone-300 hover:text-emerald-900 dark:hover:text-emerald-300 hover:bg-stone-100 dark:hover:bg-stone-800'
                   }`}
                 >
                   {item.icon}
@@ -147,7 +151,7 @@ export const Navbar: React.FC<NavbarProps> = ({ activePage, onNavigate, onOpenAu
                   {item.badge && (
                     <span
                       className={`text-[9px] px-1 py-0.2 rounded-full font-bold uppercase ${
-                        isActive ? 'bg-amber-400 text-emerald-950' : 'bg-emerald-100 text-emerald-800'
+                        isActive ? 'bg-amber-400 text-emerald-950' : 'bg-emerald-100 dark:bg-emerald-950/80 text-emerald-800 dark:text-emerald-300'
                       }`}
                     >
                       {item.badge}
@@ -165,13 +169,13 @@ export const Navbar: React.FC<NavbarProps> = ({ activePage, onNavigate, onOpenAu
                 activePage === 'admin'
                   ? 'bg-amber-500 text-stone-950 shadow-xs ring-1 ring-amber-600'
                   : isAdmin
-                  ? 'bg-amber-50 text-amber-900 hover:bg-amber-100 border border-amber-300'
-                  : 'text-stone-500 hover:text-stone-900 hover:bg-stone-100'
+                  ? 'bg-amber-50 dark:bg-amber-950/50 text-amber-900 dark:text-amber-300 hover:bg-amber-100 dark:hover:bg-amber-900/40 border border-amber-300 dark:border-amber-700'
+                  : 'text-stone-500 dark:text-stone-400 hover:text-stone-900 dark:hover:text-stone-100 hover:bg-stone-100 dark:hover:bg-stone-800'
               }`}
               title="Site Administration & Spam Moderation"
             >
               {isAdmin ? (
-                <ShieldCheck className="w-4 h-4 text-emerald-800" />
+                <ShieldCheck className="w-4 h-4 text-emerald-800 dark:text-emerald-400" />
               ) : (
                 <Lock className="w-3.5 h-3.5 text-stone-400" />
               )}
@@ -179,23 +183,38 @@ export const Navbar: React.FC<NavbarProps> = ({ activePage, onNavigate, onOpenAu
             </button>
           </nav>
 
-          {/* User Auth Action & Mobile Toggle */}
+          {/* User Auth Action, Theme Toggle & Mobile Toggle */}
           <div className="flex items-center gap-2 shrink-0">
+            {/* Theme Toggle Button (Light / Dark) */}
+            <button
+              id="theme-toggle-btn"
+              onClick={toggleTheme}
+              className="p-2 rounded-xl text-stone-600 dark:text-stone-300 hover:text-emerald-700 dark:hover:text-amber-400 hover:bg-stone-100 dark:hover:bg-stone-800 border border-stone-200/80 dark:border-stone-700/80 transition-colors focus:outline-none cursor-pointer flex items-center justify-center shadow-2xs"
+              title={isDark ? "Switch to Light Mode" : "Switch to Dark Mode"}
+              aria-label={isDark ? "Switch to Light Mode" : "Switch to Dark Mode"}
+            >
+              {isDark ? (
+                <Sun className="w-4 h-4 text-amber-400 transition-transform hover:rotate-45" />
+              ) : (
+                <Moon className="w-4 h-4 text-stone-700 transition-transform hover:-rotate-12" />
+              )}
+            </button>
+
             {user ? (
               <div className="flex items-center gap-1.5">
-                <div className="flex items-center gap-2 bg-stone-100 py-1 px-2.5 rounded-xl border border-stone-200">
+                <div className="flex items-center gap-2 bg-stone-100 dark:bg-stone-800 py-1 px-2.5 rounded-xl border border-stone-200 dark:border-stone-700">
                   {user.photoURL ? (
                     <img
                       src={user.photoURL}
                       alt={user.displayName || 'User'}
-                      className="w-6 h-6 rounded-full border border-stone-300 shrink-0"
+                      className="w-6 h-6 rounded-full border border-stone-300 dark:border-stone-600 shrink-0"
                     />
                   ) : (
                     <div className="w-6 h-6 rounded-full bg-emerald-800 text-white flex items-center justify-center text-xs font-bold shrink-0">
                       {user.displayName ? user.displayName.charAt(0).toUpperCase() : 'U'}
                     </div>
                   )}
-                  <span className="text-xs font-medium text-stone-800 hidden md:inline max-w-[100px] truncate">
+                  <span className="text-xs font-medium text-stone-800 dark:text-stone-200 hidden md:inline max-w-[100px] truncate">
                     {user.displayName}
                   </span>
                 </div>
@@ -203,7 +222,7 @@ export const Navbar: React.FC<NavbarProps> = ({ activePage, onNavigate, onOpenAu
                   id="user-logout-btn"
                   onClick={logout}
                   title="Sign out"
-                  className="p-1.5 text-stone-500 hover:text-red-600 hover:bg-stone-100 rounded-lg transition-colors cursor-pointer"
+                  className="p-1.5 text-stone-500 hover:text-red-600 hover:bg-stone-100 dark:hover:bg-stone-800 rounded-lg transition-colors cursor-pointer"
                 >
                   <LogOut className="w-4 h-4" />
                 </button>
@@ -212,9 +231,9 @@ export const Navbar: React.FC<NavbarProps> = ({ activePage, onNavigate, onOpenAu
               <button
                 id="admin-active-badge"
                 onClick={() => handleNavClick('admin')}
-                className="px-2.5 py-1 bg-emerald-100 text-emerald-900 border border-emerald-300 text-xs font-bold rounded-xl flex items-center gap-1.5"
+                className="px-2.5 py-1 bg-emerald-100 dark:bg-emerald-950/80 text-emerald-900 dark:text-emerald-300 border border-emerald-300 dark:border-emerald-700 text-xs font-bold rounded-xl flex items-center gap-1.5"
               >
-                <ShieldCheck className="w-3.5 h-3.5 text-emerald-800" />
+                <ShieldCheck className="w-3.5 h-3.5 text-emerald-800 dark:text-emerald-400" />
                 <span>Admin Unlocked</span>
               </button>
             ) : null}
@@ -223,7 +242,7 @@ export const Navbar: React.FC<NavbarProps> = ({ activePage, onNavigate, onOpenAu
             <button
               id="mobile-menu-toggle"
               onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-              className="lg:hidden p-2 text-stone-600 hover:text-stone-900 rounded-lg hover:bg-stone-100 focus:outline-none shrink-0"
+              className="lg:hidden p-2 text-stone-600 dark:text-stone-300 hover:text-stone-900 dark:hover:text-stone-100 rounded-lg hover:bg-stone-100 dark:hover:bg-stone-800 focus:outline-none shrink-0"
               aria-label="Toggle navigation menu"
             >
               {mobileMenuOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
@@ -234,8 +253,22 @@ export const Navbar: React.FC<NavbarProps> = ({ activePage, onNavigate, onOpenAu
 
       {/* Mobile Drawer */}
       {mobileMenuOpen && (
-        <div className="lg:hidden bg-white border-b border-stone-200 px-4 pt-2 pb-6 space-y-2 shadow-lg animate-fadeIn">
-          <div className="grid grid-cols-2 gap-2 py-2">
+        <div className="lg:hidden bg-white dark:bg-stone-900 border-b border-stone-200 dark:border-stone-800 px-4 pt-2 pb-6 space-y-3 shadow-lg animate-fadeIn">
+          {/* Quick Mode Toggle in Mobile Drawer */}
+          <div className="flex items-center justify-between px-3 py-2 rounded-xl bg-stone-50 dark:bg-stone-800/60 border border-stone-200 dark:border-stone-700/60">
+            <span className="text-xs font-semibold text-stone-700 dark:text-stone-300 flex items-center gap-2">
+              {isDark ? <Moon className="w-4 h-4 text-amber-400" /> : <Sun className="w-4 h-4 text-amber-500" />}
+              <span>{isDark ? 'Dark Theme Active' : 'Light Theme Active'}</span>
+            </span>
+            <button
+              onClick={toggleTheme}
+              className="text-xs font-bold px-3 py-1 bg-stone-200 dark:bg-stone-700 text-stone-800 dark:text-stone-200 rounded-lg hover:bg-emerald-600 hover:text-white transition-colors cursor-pointer"
+            >
+              Switch to {isDark ? 'Light' : 'Dark'}
+            </button>
+          </div>
+
+          <div className="grid grid-cols-2 gap-2 py-1">
             {navItems.map((item) => {
               const isActive = activePage === item.id;
               return (
@@ -244,11 +277,11 @@ export const Navbar: React.FC<NavbarProps> = ({ activePage, onNavigate, onOpenAu
                   onClick={() => handleNavClick(item.id)}
                   className={`p-2.5 rounded-xl text-left text-xs font-semibold flex items-center gap-2 transition-all ${
                     isActive
-                      ? 'bg-emerald-800 text-white shadow-xs'
-                      : 'bg-stone-50 text-stone-700 hover:bg-stone-100'
+                      ? 'bg-emerald-800 dark:bg-emerald-700 text-white shadow-xs'
+                      : 'bg-stone-50 dark:bg-stone-800/80 text-stone-700 dark:text-stone-300 hover:bg-stone-100 dark:hover:bg-stone-750'
                   }`}
                 >
-                  <div className={`p-1.5 rounded-lg ${isActive ? 'bg-emerald-900 text-amber-300' : 'bg-white text-emerald-800 shadow-2xs'}`}>
+                  <div className={`p-1.5 rounded-lg ${isActive ? 'bg-emerald-900 text-amber-300' : 'bg-white dark:bg-stone-700 text-emerald-800 dark:text-emerald-300 shadow-2xs'}`}>
                     {item.icon}
                   </div>
                   <div className="truncate">
@@ -267,27 +300,27 @@ export const Navbar: React.FC<NavbarProps> = ({ activePage, onNavigate, onOpenAu
               className={`p-2.5 rounded-xl text-left text-xs font-semibold flex items-center gap-2 transition-all col-span-2 ${
                 activePage === 'admin'
                   ? 'bg-amber-500 text-stone-950 font-bold'
-                  : 'bg-amber-50/80 text-amber-900 border border-amber-200'
+                  : 'bg-amber-50/80 dark:bg-amber-950/40 text-amber-900 dark:text-amber-300 border border-amber-200 dark:border-amber-800'
               }`}
             >
-              <div className="p-1.5 rounded-lg bg-amber-200 text-amber-950">
+              <div className="p-1.5 rounded-lg bg-amber-200 dark:bg-amber-900 text-amber-950 dark:text-amber-200">
                 <ShieldCheck className="w-4 h-4" />
               </div>
               <div>
                 <span className="font-bold">Admin Panel</span>
-                <span className="block text-[10px] text-amber-800 font-normal">Manage Charts, Posters & Notes</span>
+                <span className="block text-[10px] text-amber-800 dark:text-amber-400 font-normal">Manage Charts, Posters & Notes</span>
               </div>
             </button>
           </div>
 
-          <div className="border-t border-stone-100 pt-3 flex items-center justify-between text-xs text-stone-500">
-            <button onClick={() => handleNavClick('about')} className="hover:text-emerald-800 flex items-center gap-1">
+          <div className="border-t border-stone-100 dark:border-stone-800 pt-3 flex items-center justify-between text-xs text-stone-500 dark:text-stone-400">
+            <button onClick={() => handleNavClick('about')} className="hover:text-emerald-800 dark:hover:text-emerald-400 flex items-center gap-1">
               <Info className="w-3.5 h-3.5" /> About Us
             </button>
-            <button onClick={() => handleNavClick('privacy')} className="hover:text-emerald-800 flex items-center gap-1">
+            <button onClick={() => handleNavClick('privacy')} className="hover:text-emerald-800 dark:hover:text-emerald-400 flex items-center gap-1">
               <Shield className="w-3.5 h-3.5" /> Privacy
             </button>
-            <button onClick={() => handleNavClick('terms')} className="hover:text-emerald-800 flex items-center gap-1">
+            <button onClick={() => handleNavClick('terms')} className="hover:text-emerald-800 dark:hover:text-emerald-400 flex items-center gap-1">
               <FileText className="w-3.5 h-3.5" /> Terms
             </button>
           </div>

@@ -205,19 +205,19 @@ export const HomePage: React.FC<HomePageProps> = ({ onNavigate }) => {
       </section>
 
       {/* Humble Welcome for New Converts & Seekers */}
-      <section className="bg-gradient-to-r from-amber-50 via-emerald-50 to-teal-50 border border-amber-200/80 rounded-3xl p-5 sm:p-7 md:p-8 flex flex-col md:flex-row items-start md:items-center justify-between gap-5 sm:gap-6 shadow-xs">
+      <section className="bg-gradient-to-r from-amber-50 via-emerald-50 to-teal-50 dark:from-stone-900 dark:via-emerald-950/40 dark:to-stone-900 border border-amber-200/80 dark:border-amber-700/50 rounded-3xl p-5 sm:p-7 md:p-8 flex flex-col md:flex-row items-start md:items-center justify-between gap-5 sm:gap-6 shadow-xs">
         <div className="flex items-start gap-3.5 sm:gap-4">
-          <div className="w-11 h-11 sm:w-12 sm:h-12 rounded-2xl bg-amber-200/80 text-amber-900 flex items-center justify-center shrink-0 shadow-2xs">
-            <HeartHandshake className="w-5 h-5 sm:w-6 sm:h-6 text-emerald-900" />
+          <div className="w-11 h-11 sm:w-12 sm:h-12 rounded-2xl bg-amber-200/80 dark:bg-amber-900/60 text-amber-900 dark:text-amber-200 flex items-center justify-center shrink-0 shadow-2xs">
+            <HeartHandshake className="w-5 h-5 sm:w-6 sm:h-6 text-emerald-900 dark:text-emerald-300" />
           </div>
           <div className="space-y-1">
-            <span className="text-[10px] sm:text-[11px] font-bold uppercase tracking-wider text-emerald-800">
+            <span className="text-[10px] sm:text-[11px] font-bold uppercase tracking-wider text-emerald-800 dark:text-emerald-400">
               New to Islam or Seeking Knowledge?
             </span>
-            <h2 className="text-base sm:text-xl font-bold text-stone-900">
+            <h2 className="text-base sm:text-xl font-bold text-stone-900 dark:text-stone-100">
               A Warm, Humble Welcome to Our Convert Guide
             </h2>
-            <p className="text-xs sm:text-sm text-stone-600 max-w-2xl leading-relaxed">
+            <p className="text-xs sm:text-sm text-stone-600 dark:text-stone-300 max-w-2xl leading-relaxed">
               Congratulations on taking this noble step! We designed a gentle, zero-stress guide covering the Shahada, beginner-friendly prayer steps, halal living, handling family relationships, and common questions.
             </p>
           </div>
@@ -323,28 +323,28 @@ export const HomePage: React.FC<HomePageProps> = ({ onNavigate }) => {
               key={feat.id}
               id={`feature-card-${feat.id}`}
               onClick={() => onNavigate(feat.id)}
-              className="bg-white rounded-2xl p-5 border border-stone-200 shadow-xs hover:shadow-md hover:border-emerald-300 transition-all cursor-pointer group flex flex-col justify-between"
+              className="bg-white dark:bg-stone-900 rounded-2xl p-5 border border-stone-200 dark:border-stone-800 shadow-xs hover:shadow-md hover:border-emerald-300 dark:hover:border-emerald-600 transition-all cursor-pointer group flex flex-col justify-between"
             >
               <div>
                 <div className="flex items-center justify-between mb-3">
-                  <div className="w-10 h-10 rounded-xl bg-emerald-50 border border-emerald-100 flex items-center justify-center group-hover:bg-emerald-800 group-hover:text-white transition-colors">
+                  <div className="w-10 h-10 rounded-xl bg-emerald-50 dark:bg-emerald-950/80 border border-emerald-100 dark:border-emerald-800 flex items-center justify-center group-hover:bg-emerald-800 dark:group-hover:bg-emerald-700 group-hover:text-white transition-colors">
                     {React.cloneElement(feat.icon, {
-                      className: 'w-5 h-5 text-emerald-800 group-hover:text-white transition-colors'
+                      className: 'w-5 h-5 text-emerald-800 dark:text-emerald-300 group-hover:text-white transition-colors'
                     })}
                   </div>
-                  <span className="text-[11px] text-stone-500 font-medium bg-stone-50 px-2 py-0.5 rounded-md border border-stone-100">
+                  <span className="text-[11px] text-stone-500 dark:text-stone-400 font-medium bg-stone-50 dark:bg-stone-800 px-2 py-0.5 rounded-md border border-stone-100 dark:border-stone-700">
                     {feat.tag}
                   </span>
                 </div>
-                <h3 className="text-base font-bold text-stone-900 group-hover:text-emerald-900 transition-colors">
+                <h3 className="text-base font-bold text-stone-900 dark:text-stone-100 group-hover:text-emerald-900 dark:group-hover:text-emerald-400 transition-colors">
                   {feat.title}
                 </h3>
-                <p className="text-xs text-stone-600 mt-2 leading-relaxed">
+                <p className="text-xs text-stone-600 dark:text-stone-300 mt-2 leading-relaxed">
                   {feat.desc}
                 </p>
               </div>
 
-              <div className="pt-4 mt-4 border-t border-stone-100 flex items-center text-xs font-semibold text-emerald-800 group-hover:text-emerald-950">
+              <div className="pt-4 mt-4 border-t border-stone-100 dark:border-stone-800 flex items-center text-xs font-semibold text-emerald-800 dark:text-emerald-400 group-hover:text-emerald-950 dark:group-hover:text-emerald-300">
                 <span>Open {feat.title}</span>
                 <ArrowRight className="w-3.5 h-3.5 ml-1 transform group-hover:translate-x-1 transition-transform" />
               </div>

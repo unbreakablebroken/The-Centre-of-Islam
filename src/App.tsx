@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { PageId } from './types';
+import { ThemeProvider } from './context/ThemeContext';
 import { AuthProvider, useAuth } from './context/AuthContext';
 import { VisitorProvider } from './context/VisitorContext';
 import { Navbar } from './components/Navbar';
@@ -111,7 +112,7 @@ function AppContent() {
   };
 
   return (
-    <div className="min-h-screen bg-stone-50 flex flex-col font-sans text-stone-900 selection:bg-emerald-800 selection:text-white">
+    <div className="min-h-screen bg-stone-50 dark:bg-stone-950 flex flex-col font-sans text-stone-900 dark:text-stone-100 selection:bg-emerald-800 dark:selection:bg-emerald-600 selection:text-white transition-colors duration-200">
       {/* Global Top Navigation */}
       <Navbar
         activePage={activePage}
@@ -139,10 +140,12 @@ function AppContent() {
 
 export default function App() {
   return (
-    <AuthProvider>
-      <VisitorProvider>
-        <AppContent />
-      </VisitorProvider>
-    </AuthProvider>
+    <ThemeProvider>
+      <AuthProvider>
+        <VisitorProvider>
+          <AppContent />
+        </VisitorProvider>
+      </AuthProvider>
+    </ThemeProvider>
   );
 }
