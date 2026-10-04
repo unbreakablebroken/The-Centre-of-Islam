@@ -44,6 +44,11 @@ export const Footer: React.FC<FooterProps> = ({ onNavigate }) => {
                 </button>
               </li>
               <li>
+                <button onClick={() => onNavigate('para-recitation')} className="hover:text-amber-300 text-amber-200/90 font-medium transition-colors">
+                  Para Recitation (30 Paras)
+                </button>
+              </li>
+              <li>
                 <button onClick={() => onNavigate('salah-counter')} className="hover:text-white transition-colors">
                   Monthly Salah Tracker
                 </button>

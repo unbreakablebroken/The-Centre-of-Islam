@@ -20,7 +20,8 @@ import {
   Radio,
   FastForward,
   Rewind,
-  SlidersHorizontal
+  SlidersHorizontal,
+  Layers
 } from 'lucide-react';
 
 export const QuranPage: React.FC = () => {
@@ -431,6 +432,35 @@ export const QuranPage: React.FC = () => {
             A+
           </button>
         </div>
+      </div>
+
+      {/* Cross-Link Banner to Para by Para Recitation */}
+      <div className="bg-gradient-to-r from-emerald-900 via-emerald-800 to-emerald-950 rounded-2xl p-4 sm:p-5 text-white flex flex-col sm:flex-row items-center justify-between gap-4 border border-amber-400/40 shadow-sm">
+        <div className="flex items-center gap-3">
+          <div className="w-10 h-10 rounded-xl bg-amber-400/20 border border-amber-400/50 flex items-center justify-center text-amber-300 shrink-0">
+            <Layers className="w-5 h-5" />
+          </div>
+          <div>
+            <h3 className="text-sm sm:text-base font-bold text-white flex items-center gap-2">
+              <span>Para by Para Recitation (30 Paras)</span>
+              <span className="text-[10px] uppercase font-bold px-2 py-0.5 rounded-full bg-amber-400 text-emerald-950">New</span>
+            </h3>
+            <p className="text-xs text-emerald-100/90 mt-0.5">
+              Listen to the entire Holy Quran organized by 30 Paras (Juz) with verse-by-verse sync in all 14 Qaris voices.
+            </p>
+          </div>
+        </div>
+
+        <button
+          onClick={() => {
+            window.location.hash = 'para-recitation';
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+          }}
+          className="whitespace-nowrap px-4 py-2 rounded-xl bg-amber-400 hover:bg-amber-300 text-emerald-950 font-bold text-xs sm:text-sm flex items-center gap-1.5 transition-colors shadow-sm cursor-pointer"
+        >
+          <span>Explore 30 Paras</span>
+          <ArrowRight className="w-4 h-4" />
+        </button>
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">

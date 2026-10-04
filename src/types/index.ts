@@ -1,6 +1,7 @@
 export type PageId = 
   | 'home'
   | 'quran'
+  | 'para-recitation'
   | 'calendar'
   | 'zakat-calculator'
   | 'hadith'
@@ -15,6 +16,39 @@ export type PageId =
   | 'about'
   | 'privacy'
   | 'terms';
+
+export interface ParaMeta {
+  number: number;
+  nameArabic: string;
+  nameEnglish: string;
+  surahRange: string;
+  startSurahNumber: number;
+  startSurahName: string;
+  startAyah: number;
+  endSurahNumber: number;
+  endSurahName: string;
+  endAyah: number;
+  totalAyahs: number;
+  rukuCount: number;
+  surahsIncluded: string[];
+  keyThemes: string[];
+  description: string;
+}
+
+export interface ParaAyah {
+  number: number; // overall ayah in Quran
+  numberInSurah: number;
+  surahNumber: number;
+  surahNameArabic: string;
+  surahNameEnglish: string;
+  surahEnglishTranslation: string;
+  textArabic: string;
+  textEnglish: string;
+  juz: number;
+  page?: number;
+  ruku?: number;
+  isSajda?: boolean;
+}
 
 export interface UserProfile {
   uid: string;

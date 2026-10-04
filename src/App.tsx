@@ -19,6 +19,7 @@ import { ConvertGuidePage } from './pages/ConvertGuidePage';
 import { MonthlySalahCounterPage } from './pages/MonthlySalahCounterPage';
 import { TasbihCounterPage } from './pages/TasbihCounterPage';
 import { ZakatCalculatorPage } from './pages/ZakatCalculatorPage';
+import { ParaRecitationPage } from './pages/ParaRecitationPage';
 import { AboutUsPage } from './pages/AboutUsPage';
 import { PrivacyPolicyPage } from './pages/PrivacyPolicyPage';
 import { TermsConditionsPage } from './pages/TermsConditionsPage';
@@ -37,7 +38,7 @@ function AppContent() {
   useEffect(() => {
     const handleUrlChange = () => {
       const validPages: PageId[] = [
-        'home', 'quran', 'calendar', 'zakat-calculator', 'hadith',
+        'home', 'quran', 'para-recitation', 'calendar', 'zakat-calculator', 'hadith',
         'daily-quotes', 'printables', 'community-qa', 'study-notes',
         'convert-guide', 'salah-counter', 'tasbih', 'about', 'privacy', 'terms', 'admin'
       ];
@@ -71,6 +72,8 @@ function AppContent() {
         return <HomePage onNavigate={handleNavigate} />;
       case 'quran':
         return <QuranPage />;
+      case 'para-recitation':
+        return <ParaRecitationPage />;
       case 'calendar':
         return <CalendarPage />;
       case 'zakat-calculator':

@@ -18,7 +18,8 @@ import {
   BookMarked,
   FileText,
   HeartHandshake,
-  Coins
+  Coins,
+  Layers
 } from 'lucide-react';
 import { DAILY_QUOTES } from '../data/quotesData';
 import { HADITH_COLLECTION } from '../data/hadithData';
@@ -38,6 +39,13 @@ export const HomePage: React.FC<HomePageProps> = ({ onNavigate }) => {
       desc: 'Complete 114 Surahs with authentic Arabic Uthmani script, English translation, and audio recitation.',
       icon: <BookOpen className="w-5 h-5 text-emerald-700" />,
       tag: '114 Surahs'
+    },
+    {
+      id: 'para-recitation' as PageId,
+      title: 'Para by Para Recitation',
+      desc: 'Listen to all 30 Paras (Juz) with verse-by-verse sync and continuous recitation across 14 world-renowned Qaris.',
+      icon: <Layers className="w-5 h-5 text-emerald-700" />,
+      tag: '30 Paras • 14 Qaris'
     },
     {
       id: 'zakat-calculator' as PageId,
