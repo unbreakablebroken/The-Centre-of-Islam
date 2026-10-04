@@ -9,7 +9,9 @@ import {
   Share2, 
   BookMarked, 
   Tag, 
-  CheckCircle2 
+  CheckCircle2,
+  ArrowRight,
+  Sparkles
 } from 'lucide-react';
 
 export const HadithPage: React.FC = () => {
@@ -59,6 +61,35 @@ export const HadithPage: React.FC = () => {
         <div className="text-xs text-stone-500 bg-stone-50 px-3 py-2 rounded-xl border border-stone-200">
           Showing <strong className="text-emerald-900">{filteredHadiths.length}</strong> authenticated hadiths
         </div>
+      </div>
+
+      {/* Banner Linking to Complete Hadith Library (HadithAPI) */}
+      <div className="bg-gradient-to-r from-emerald-900 via-emerald-800 to-emerald-950 rounded-2xl p-5 text-white flex flex-col sm:flex-row items-center justify-between gap-4 border border-amber-400/40 shadow-sm">
+        <div className="flex items-center gap-3">
+          <div className="w-10 h-10 rounded-xl bg-amber-400/20 border border-amber-400/50 flex items-center justify-center text-amber-300 shrink-0">
+            <Scroll className="w-5 h-5" />
+          </div>
+          <div>
+            <h3 className="text-sm sm:text-base font-bold text-white flex items-center gap-2">
+              <span>Looking for all 40,000+ Canonical Hadiths?</span>
+              <span className="text-[10px] uppercase font-bold px-2 py-0.5 rounded-full bg-amber-400 text-emerald-950">40k+ Collection</span>
+            </h3>
+            <p className="text-xs text-emerald-100/90 mt-0.5">
+              Access the complete collection from Sahih Bukhari, Sahih Muslim, Tirmidhi, Abu Dawood, Ibn Majah, and Nasa'i via HadithAPI with Arabic, English & Urdu translations.
+            </p>
+          </div>
+        </div>
+
+        <button
+          onClick={() => {
+            window.location.hash = 'all-hadiths';
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+          }}
+          className="whitespace-nowrap px-4 py-2 rounded-xl bg-amber-400 hover:bg-amber-300 text-emerald-950 font-bold text-xs sm:text-sm flex items-center gap-1.5 transition-colors shadow-sm cursor-pointer"
+        >
+          <span>Open Hadith Library</span>
+          <ArrowRight className="w-4 h-4" />
+        </button>
       </div>
 
       {/* Search & Topic Filters */}

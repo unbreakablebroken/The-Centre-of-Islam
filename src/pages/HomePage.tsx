@@ -69,6 +69,13 @@ export const HomePage: React.FC<HomePageProps> = ({ onNavigate }) => {
       tag: 'Authentic Sources'
     },
     {
+      id: 'all-hadiths' as PageId,
+      title: 'Complete Hadith Library',
+      desc: 'Over 40,000+ authentic Hadiths from 9 Canonical collections (Bukhari, Muslim, Tirmidhi, Abu Dawood, etc.) powered by HadithAPI.',
+      icon: <Scroll className="w-5 h-5 text-amber-600" />,
+      tag: '40,000+ Hadiths'
+    },
+    {
       id: 'daily-quotes' as PageId,
       title: 'Daily Quotes',
       desc: 'Inspiring Quranic verses and Prophetic wisdom categorized by patience, gratitude, and good character.',

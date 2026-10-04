@@ -2,6 +2,7 @@ export type PageId =
   | 'home'
   | 'quran'
   | 'para-recitation'
+  | 'all-hadiths'
   | 'calendar'
   | 'zakat-calculator'
   | 'hadith'
@@ -16,6 +17,64 @@ export type PageId =
   | 'about'
   | 'privacy'
   | 'terms';
+
+export interface HadithApiBook {
+  id: number;
+  bookName: string;
+  writerName: string;
+  aboutWriter: string | null;
+  writerDeath: string;
+  bookSlug: string;
+  hadiths_count: number;
+  chapters_count: number;
+}
+
+export interface HadithApiChapter {
+  id: number;
+  chapterNumber: number;
+  chapterEnglish: string;
+  chapterUrdu: string;
+  chapterArabic: string;
+  bookSlug: string;
+}
+
+export interface HadithApiItem {
+  id: number;
+  hadithNumber: string;
+  englishNarrator: string;
+  hadithEnglish: string;
+  hadithUrdu: string;
+  urduNarrator: string;
+  hadithArabic: string;
+  headingArabic: string;
+  headingUrdu: string;
+  headingEnglish: string;
+  chapterId: string | number;
+  bookSlug: string;
+  volume: string;
+  status: string;
+  book?: HadithApiBook;
+  chapter?: HadithApiChapter;
+}
+
+export interface HadithApiResponse {
+  status: number;
+  message: string;
+  hadiths: {
+    current_page: number;
+    data: HadithApiItem[];
+    first_page_url?: string;
+    from: number;
+    last_page: number;
+    last_page_url?: string;
+    next_page_url?: string | null;
+    path?: string;
+    per_page: number;
+    prev_page_url?: string | null;
+    to: number;
+    total: number;
+  };
+}
 
 export interface ParaMeta {
   number: number;

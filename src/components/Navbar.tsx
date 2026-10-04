@@ -52,6 +52,7 @@ export const Navbar: React.FC<NavbarProps> = ({ activePage, onNavigate, onOpenAu
     { id: 'zakat-calculator', label: 'Zakat Calculator', icon: <Coins className="w-4 h-4" /> },
     { id: 'calendar', label: 'Calendar', icon: <CalendarIcon className="w-4 h-4" /> },
     { id: 'hadith', label: 'Hadith', icon: <Scroll className="w-4 h-4" /> },
+    { id: 'all-hadiths', label: 'All Hadiths', icon: <Scroll className="w-4 h-4 text-amber-500" />, badge: '40k+' },
     { id: 'daily-quotes', label: 'Daily Quotes', icon: <Quote className="w-4 h-4" /> },
     { id: 'printables', label: 'Charts & Posters', icon: <Printer className="w-4 h-4" /> },
     { id: 'community-qa', label: 'Debates & Q&A', icon: <MessageSquareQuote className="w-4 h-4" />, badge: 'Discuss' },

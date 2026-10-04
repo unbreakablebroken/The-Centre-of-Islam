@@ -84,7 +84,12 @@ export const Footer: React.FC<FooterProps> = ({ onNavigate }) => {
               </li>
               <li>
                 <button onClick={() => onNavigate('hadith')} className="hover:text-white transition-colors">
-                  Hadith Collection
+                  Hadith Highlights
+                </button>
+              </li>
+              <li>
+                <button onClick={() => onNavigate('all-hadiths')} className="hover:text-amber-300 text-amber-200/90 font-medium transition-colors">
+                  Complete Hadith Library (40,000+)
                 </button>
               </li>
               <li>
